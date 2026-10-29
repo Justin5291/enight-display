@@ -1,4 +1,4 @@
-import { el, clear, topbar, starsLabel, kalshiBadge } from "./util.js";
+import { el, clear, topbar, starsLabel } from "./util.js";
 
 export function mountHolding(node, state) {
   paintHold(node, state);
@@ -12,8 +12,7 @@ function paintHold(node, state) {
       starsLabel("LIVE"),
       el("h1", { class: "h-display silver", "data-brand": "1", text: state.brand.title }),
       el("p", { class: "subhead", "data-show": "1", text: state.brand.show })
-    ]),
-    el("div", { class: "hold-sponsor" }, [kalshiBadge()])
+    ])
   ]));
 }
 
