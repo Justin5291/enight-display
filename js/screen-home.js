@@ -1,5 +1,5 @@
 import { getState, update } from "./state.js";
-import { el, clear, starsLabel, faviconFor, uid, kalshiLogo, kalshiBadge } from "./util.js";
+import { el, clear, starsLabel, faviconFor, uid, kalshiLogo } from "./util.js";
 import { getSeats } from "./nyt.js";
 import { getQuote, parseKalshiInput, pokeKalshi, resolveBoard } from "./kalshi.js";
 import { putBlob, kindOf, mediaSrc } from "./media-db.js";
@@ -46,10 +46,7 @@ function paint(node, state) {
   if (cats.countdown) { any = true; scroll.appendChild(singleSection("Poll closes", textTile("Poll closes", "CLOCK", () => goPage({ screen: "countdown", key: "countdown", label: "Closes" })))); }
   if (cats.manual) { any = true; scroll.appendChild(manualSection()); }
   if (!any) scroll.appendChild(el("p", { class: "home-empty", text: "Every section is off. Turn sections on in Setup." }));
-  node.appendChild(el("div", { class: "dash" }, [
-    scroll,
-    el("div", { class: "home-sponsor" }, [kalshiBadge()])
-  ]));
+  node.appendChild(el("div", { class: "dash" }, [scroll]));
   fillLive(node);
 }
 
@@ -66,11 +63,12 @@ function structureSig(s) {
   ].join("||");
 }
 
-function section(title, body, mark) {
-  const head = [el("div", { class: "home-label", text: title })];
-  if (mark) head.push(mark);
+function section(title, body) {
+  const label = typeof title === "string"
+    ? el("div", { class: "home-label", text: title })
+    : title;
   return el("section", { class: "home-sec" }, [
-    el("div", { class: "home-head" }, head),
+    el("div", { class: "home-head" }, [label]),
     body
   ]);
 }
@@ -119,7 +117,14 @@ function kalshiSection(state) {
     el("div", { class: "home-tools" }, [input, add]),
     state.markets.length ? grid : el("p", { class: "home-empty", text: "No markets yet" })
   ]);
-  return section("Kalshi markets", body, kalshiLogo("md"));
+  return section(kalshiMarketsLabel(), body);
+}
+
+function kalshiMarketsLabel() {
+  return el("div", { class: "home-label home-label-kalshi" }, [
+    kalshiLogo("head"),
+    el("span", { text: "MARKETS" })
+  ]);
 }
 
 function kalshiTile(market) {
@@ -128,7 +133,6 @@ function kalshiTile(market) {
     class: "tile-btn",
     onClick: () => goPage({ screen: "kalshi", marketId: market.id, key: "kalshi:" + market.id, label: market.label || market.ticker })
   });
-  btn.appendChild(el("div", { class: "tile-logo" }, [kalshiLogo("sm")]));
   btn.appendChild(el("div", { class: "tile-pct", "data-live": "kx:" + market.id, text: kxPct(market) }));
   btn.appendChild(el("div", { class: "tile-name", "data-live": "kxtitle:" + market.id, text: kxTitle(market) }));
   btn.appendChild(el("div", { class: "tile-mode", "data-live": "kxsub:" + market.id, text: kxSub(market) }));

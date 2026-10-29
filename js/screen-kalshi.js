@@ -64,7 +64,6 @@ function paint(node, state) {
   const range = (quote && quote.range) || market.range || "ALL";
   const head = el("div", { class: "kx-head" }, [
     el("div", { class: "kx-title-row" }, [
-      kalshiLogo("lg"),
       el("h1", { class: "kx-title", text: title })
     ]),
     el("div", { class: "kx-tools" }, [

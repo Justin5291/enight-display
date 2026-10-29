@@ -58,6 +58,7 @@ input, textarea, select { user-select: text; -webkit-user-select: text; }
   display: flex;
   flex-direction: column;
   min-height: 0;
+  padding-top: max(env(safe-area-inset-top), 24px);
 }
 
 #frame {
@@ -185,16 +186,17 @@ input, textarea, select { user-select: text; -webkit-user-select: text; }
 }
 
 .logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.4em;
-  padding: 0.08em 0.35em;
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 0.15em;
-  font-size: 0.72em;
-  letter-spacing: 0.08em;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.12));
+  display: block;
+  height: 1.35em;
+  width: auto;
+  object-fit: contain;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 .star {
@@ -693,8 +695,8 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   display: inline-flex;
   align-items: center;
   flex: none;
-  gap: 0.12em;
-  padding: 0.1em;
+  gap: 0.16em;
+  padding: 0.12em;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.28);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
@@ -705,12 +707,12 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   background: transparent;
   color: rgba(244, 247, 251, 0.72);
   font-family: var(--font-display);
-  font-size: 0.72em;
+  font-size: 1em;
   letter-spacing: 0.06em;
   line-height: 1;
   min-height: 1.85em;
   min-width: 2.15em;
-  padding: 0.2em 0.42em;
+  padding: 0.22em 0.48em;
   border-radius: 999px;
 }
 .kx-range.on {
@@ -742,6 +744,10 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
 .kalshi-logo-md { height: 1.45em; }
 .kalshi-logo-lg { height: 2.05em; }
 .kalshi-logo-badge { height: 1.2em; }
+.kalshi-logo-head {
+  height: 0.78em;
+  height: 1.12cap;
+}
 .kx-badge {
   display: inline-flex;
   align-items: center;
@@ -752,13 +758,11 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.tile-logo { display: flex; align-items: center; min-height: 1.15em; }
-.home-sponsor, .seat-sponsor {
+.seat-sponsor {
   display: flex;
   justify-content: center;
   flex: none;
 }
-.home-sponsor { padding-top: 0.1em; }
 .hold-sponsor {
   position: absolute;
   left: 0;
@@ -1004,6 +1008,12 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   text-transform: uppercase;
   color: var(--gold);
   font-size: 0.85em;
+}
+.home-label-kalshi {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.42em;
+  line-height: 1;
 }
 .home-block { display: flex; flex-direction: column; gap: 0.4em; }
 .home-tools { display: flex; gap: 0.4em; align-items: center; }

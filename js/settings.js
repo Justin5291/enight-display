@@ -110,7 +110,6 @@ function renderShow(pane) {
   pane.appendChild(el("p", { class: "hint", text: "Titles edit here. Colors and the silver type live in the :root block at the top of css/app.css." }));
   pane.appendChild(field("On-air title", textInput(s.brand.title, (v) => update((st) => { st.brand.title = v || "ELECTION NIGHT"; }))));
   pane.appendChild(field("Show name", textInput(s.brand.show, (v) => update((st) => { st.brand.show = v; }))));
-  pane.appendChild(field("Corner mark", textInput(s.brand.logo, (v) => update((st) => { st.brand.logo = v; }))));
   pane.appendChild(el("h3", { text: "Clock" }));
   pane.appendChild(field("Election date", dateInput(s.settings.electionDate, (v) => update((st) => { st.settings.electionDate = v; }))));
   pane.appendChild(field("Results feed date", dateInput(s.settings.feedDate, (v) => {

@@ -68,6 +68,7 @@ export function starsLabel(text) {
 }
 
 export const KALSHI_LOGO = "assets/kalshi-logo.webp";
+export const SHOW_LOGO = "assets/show-logo.png";
 
 export function kalshiLogo(size) {
   const kind = size ? " kalshi-logo-" + size : "";
@@ -87,8 +88,12 @@ export function kalshiBadge() {
 }
 
 export function topbar(brand, page) {
-  const logo = el("span", { class: "logo-mark", text: brand.logo || "LOGO" });
-  if (!brand.logo) logo.hidden = true;
+  const logo = el("img", {
+    class: "logo-mark",
+    src: SHOW_LOGO,
+    alt: "",
+    draggable: "false"
+  });
   return el("div", { class: "topbar" }, [
     el("div", { class: "topbar-brand" }, [
       logo,

@@ -5,6 +5,7 @@ const ASSETS = [
   "./index.html",
   "./css/app.css",
   "./assets/kalshi-logo.webp",
+  "./assets/show-logo.png",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",
