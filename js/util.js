@@ -221,6 +221,16 @@ export function needText(seats, majority) {
   return n + " TO MAJORITY";
 }
 
+export function faviconFor(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    if (!host) return "";
+    return "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(host) + "&sz=64";
+  } catch (e) {
+    return "";
+  }
+}
+
 export function uid(prefix) {
   return prefix + "-" + Math.random().toString(36).slice(2, 8);
 }

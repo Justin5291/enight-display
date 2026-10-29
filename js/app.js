@@ -1,38 +1,29 @@
 import { loadState, getState, update, subscribe, visualKey } from "./state.js";
 import { mount, patch, tick } from "./screens.js";
-import { initMarkup, markupOn, clearInk } from "./markup.js";
-import { initOperator, setOperatorOpen, operatorOpen, refreshOperator } from "./operator.js";
-import { initSettings, openSettings, settingsOpen } from "./settings.js";
+import { initMarkup, clearInk } from "./markup.js";
+import { initDock, trackPage } from "./dock.js";
+import { initSettings, openSettings } from "./settings.js";
 import { startKalshi } from "./kalshi.js";
+import { startSeats, onSeats } from "./nyt.js";
 
 const root = document.getElementById("screen");
 let seen = null;
-let hideT = null;
 
 loadState();
 
 initMarkup({
   canvas: document.getElementById("ink"),
-  bar: document.getElementById("inkbar"),
-  toggleBtn: document.getElementById("ink-toggle"),
-  undoBtn: document.getElementById("ink-undo"),
-  clearBtn: document.getElementById("ink-clear"),
+  toggleBtn: document.getElementById("dock-draw"),
+  undoBtn: document.getElementById("dock-undo"),
   getMarkup: () => getState().settings.markup
 });
 
-initOperator({
-  onGear: (section) => {
-    clearTimeout(hideT);
-    openSettings(section);
-  }
+initDock({
+  onHome: () => update((s) => { s.screen = "home"; }),
+  onGear: (section) => openSettings(section)
 });
 
-initSettings({
-  onClose: () => {
-    if (operatorOpen()) armHide();
-    refreshOperator();
-  }
-});
+initSettings();
 
 function render() {
   const s = getState();
@@ -42,7 +33,7 @@ function render() {
   seen = key;
   if (changed || !root._node) mount(root, s);
   else patch(root, s);
-  refreshOperator();
+  trackPage(s);
 }
 
 subscribe(render);
@@ -50,8 +41,7 @@ render();
 
 startKalshi(getState, () => {
   const s = getState();
-  if (s.screen === "kalshi") patch(root, s);
-  refreshOperator();
+  if (s.screen === "kalshi" || s.screen === "home") patch(root, s);
 }, (info) => {
   update((s) => {
     const market = s.markets.find((row) => row.id === info.id);
@@ -62,61 +52,11 @@ startKalshi(getState, () => {
   });
 });
 
-document.getElementById("hot-reveal").addEventListener("click", () => {
-  if (settingsOpen()) return;
-  if (operatorOpen()) hideOp();
-  else showOp();
+startSeats(() => getState().settings.feedDate);
+onSeats(() => {
+  const s = getState();
+  if (s.screen === "senate" || s.screen === "house" || s.screen === "home") patch(root, s);
 });
-
-document.getElementById("hot-sites").addEventListener("click", () => {
-  if (settingsOpen()) return;
-  update((s) => { s.screen = "sites"; });
-});
-
-const app = document.getElementById("app");
-let press = null;
-app.addEventListener("pointerdown", (e) => {
-  if (markupOn() || settingsOpen()) return;
-  if (e.target.closest("button, a, input, textarea, select, #op, #sheet, #inkbar")) return;
-  const timer = setTimeout(() => {
-    press = null;
-    showOp();
-  }, 600);
-  press = { x: e.clientX, y: e.clientY, timer: timer };
-});
-app.addEventListener("pointermove", (e) => {
-  if (!press) return;
-  if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > 14) {
-    clearTimeout(press.timer);
-    press = null;
-  }
-});
-function endPress() {
-  if (!press) return;
-  clearTimeout(press.timer);
-  press = null;
-}
-app.addEventListener("pointerup", endPress);
-app.addEventListener("pointercancel", endPress);
-
-const opEl = document.getElementById("op");
-opEl.addEventListener("pointerdown", () => clearTimeout(hideT));
-opEl.addEventListener("pointerup", () => armHide());
-opEl.addEventListener("input", () => armHide());
-
-function showOp() {
-  setOperatorOpen(true);
-  armHide();
-}
-function hideOp() {
-  clearTimeout(hideT);
-  setOperatorOpen(false);
-}
-function armHide() {
-  clearTimeout(hideT);
-  if (!operatorOpen() || settingsOpen()) return;
-  hideT = setTimeout(hideOp, getState().settings.hideMs || 8000);
-}
 
 setInterval(() => {
   if (getState().screen === "countdown") tick(root, getState());

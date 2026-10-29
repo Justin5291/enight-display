@@ -1,10 +1,14 @@
 import { getState, update, setCall, exportPayload, importPayload, resetShow } from "./state.js";
+import { CATEGORIES } from "./data.js";
 import { el, clear, uid, todayInZone, formatClose } from "./util.js";
 import { pokeKalshi } from "./kalshi.js";
+import { pokeSeats } from "./nyt.js";
+import { clearInk } from "./markup.js";
 import { deleteBlob } from "./media-db.js";
 
 const NAV = [
   ["show", "Show"],
+  ["categories", "Categories"],
   ["markup", "Markup"],
   ["kalshi", "Kalshi"],
   ["senate", "Senate"],
@@ -87,6 +91,7 @@ function render() {
 
 const RENDER = {
   show: renderShow,
+  categories: renderCategories,
   markup: renderMarkup,
   kalshi: renderKalshi,
   senate: (pane) => renderBoard(pane, "senate"),
@@ -108,18 +113,22 @@ function renderShow(pane) {
   pane.appendChild(field("Corner mark", textInput(s.brand.logo, (v) => update((st) => { st.brand.logo = v; }))));
   pane.appendChild(el("h3", { text: "Clock" }));
   pane.appendChild(field("Election date", dateInput(s.settings.electionDate, (v) => update((st) => { st.settings.electionDate = v; }))));
+  pane.appendChild(field("Results feed date", dateInput(s.settings.feedDate, (v) => {
+    update((st) => { st.settings.feedDate = v; });
+    pokeSeats();
+  })));
+  pane.appendChild(el("p", { class: "hint", text: "Senate and House seat trackers read AP calls from the NYT results files for the feed date. Default is 2026-11-03. Set 2024-11-05 to rehearse with the last cycle. The election date above is only the poll-close clock." }));
   pane.appendChild(el("button", { type: "button", class: "bigbtn", text: "Use today", onClick: () => {
     update((st) => { st.settings.electionDate = todayInZone(st.settings.timezone); });
     render();
   } }));
-  pane.appendChild(field("Controls hide after (ms)", numInput(s.settings.hideMs, (n) => update((st) => { st.settings.hideMs = n; }))));
   pane.appendChild(check("Auto-mark polls closed when the close time passes", s.settings.autoClosePolls, (v) => update((st) => { st.settings.autoClosePolls = v; })));
 }
 
 function renderMarkup(pane) {
   const mk = getState().settings.markup;
   pane.appendChild(el("h3", { text: "Markup" }));
-  pane.appendChild(el("p", { class: "hint", text: "Set this before air. Live controls are only Draw, Undo, and Clear." }));
+  pane.appendChild(el("p", { class: "hint", text: "Set color and stroke here before air. On the strip, Draw and Undo are the live controls. Clear is the button below." }));
   const colors = el("div", { class: "inline" });
   for (const color of MARKUP_COLORS) {
     const btn = el("button", { type: "button", class: "swatch" + (mk.color.toLowerCase() === color ? " on" : ""), style: "background:" + color });
@@ -151,12 +160,23 @@ function renderMarkup(pane) {
   }
   pane.appendChild(field("Tool", tools));
   pane.appendChild(check("Clear drawings when the on-air picture changes", mk.autoClear, (v) => update((st) => { st.settings.markup.autoClear = v; })));
+  pane.appendChild(el("button", { type: "button", class: "bigbtn", text: "Clear drawings", onClick: () => clearInk() }));
+}
+
+function renderCategories(pane) {
+  const s = getState();
+  pane.appendChild(el("h3", { text: "Categories" }));
+  pane.appendChild(el("p", { class: "hint", text: "Each switch is one section on the home dashboard. Off hides that section. Map, race calls, poll closes, and the manual seat boards start off. Their screens are still here." }));
+  for (const cat of CATEGORIES) {
+    const on = !!(s.settings.categories && s.settings.categories[cat.id]);
+    pane.appendChild(check(cat.label, on, (v) => update((st) => { st.settings.categories[cat.id] = v; })));
+  }
 }
 
 function renderKalshi(pane) {
   const s = getState();
   pane.appendChild(el("h3", { text: "Kalshi proxy" }));
-  pane.appendChild(el("p", { class: "hint", text: "Browser calls to api.elections.kalshi.com get HTTP 403 and no CORS headers, so the chart loads through your proxy. Deploy proxy/kalshi-worker.js and paste its URL here. Leave blank to keep Kalshi off the air." }));
+  pane.appendChild(el("p", { class: "hint", text: "Browser calls to api.elections.kalshi.com get HTTP 403 and no CORS headers, so the chart loads through a proxy. The show proxy is filled in when this is empty. Replace it only if you deploy your own worker." }));
   const input = textInput(s.settings.kalshiProxy, (v) => {
     update((st) => { st.settings.kalshiProxy = v.trim(); });
     pokeKalshi();
@@ -165,17 +185,33 @@ function renderKalshi(pane) {
   pane.appendChild(field("Proxy base URL", input));
   pane.appendChild(field("Refresh seconds", numInput(s.settings.kalshiRefreshSec, (n) => update((st) => { st.settings.kalshiRefreshSec = n; }))));
   pane.appendChild(el("h3", { text: "Saved markets" }));
-  if (!s.markets.length) pane.appendChild(el("p", { class: "hint", text: "Add a ticker from the Kalshi controls." }));
+  pane.appendChild(el("p", { class: "hint", text: "Add a market from the home dashboard, or edit saved ones here. Chart range is saved on each one. The on-air screen has no range buttons." }));
+  if (!s.markets.length) pane.appendChild(el("p", { class: "hint", text: "None saved yet." }));
   s.markets.forEach((market, index) => {
     const box = el("div", { class: "editor" });
     box.appendChild(field("Label", textInput(market.label, (v) => update((st) => {
       const row = st.markets.find((m) => m.id === market.id);
       if (row) row.label = v;
     }))));
-    box.appendChild(field("Ticker", textInput(market.ticker, (v) => update((st) => {
-      const row = st.markets.find((m) => m.id === market.id);
-      if (row) row.ticker = v.trim().toUpperCase();
-    }))));
+    box.appendChild(field("Ticker", textInput(market.ticker, (v) => {
+      update((st) => {
+        const row = st.markets.find((m) => m.id === market.id);
+        if (row) row.ticker = v.trim().toUpperCase();
+      });
+      pokeKalshi();
+    })));
+    box.appendChild(field("Chart range", selectInput(market.range || "ALL", [
+      ["1D", "1D"],
+      ["1W", "1W"],
+      ["1M", "1M"],
+      ["ALL", "ALL"]
+    ], (v) => {
+      update((st) => {
+        const row = st.markets.find((m) => m.id === market.id);
+        if (row) row.range = v;
+      });
+      pokeKalshi();
+    })));
     box.appendChild(el("div", { class: "inline" }, [
       el("button", { type: "button", class: "mini", text: "Up", onClick: () => move("markets", index, -1) }),
       el("button", { type: "button", class: "mini", text: "Down", onClick: () => move("markets", index, 1) }),
@@ -192,7 +228,7 @@ function renderBoard(pane, chamber) {
   const b = getState()[chamber];
   const name = chamber === "senate" ? "Senate" : "House";
   pane.appendChild(el("h3", { text: name }));
-  pane.appendChild(el("p", { class: "hint", text: "These are the on-air numbers. Race calls do not change them unless that option is on under Races." }));
+  pane.appendChild(el("p", { class: "hint", text: "Manual board only. The home dashboard seat trackers use AP calls from the NYT feed and ignore these numbers. Turn on Manual boards under Categories to put this board on air." }));
   pane.appendChild(el("div", { class: "grid-2" }, [
     field("Republican", numInput(b.r, (n) => update((st) => { st[chamber].r = n; }))),
     field("Democrat", numInput(b.d, (n) => update((st) => { st[chamber].d = n; }))),
@@ -208,7 +244,7 @@ function renderRaces(pane) {
   const s = getState();
   pane.appendChild(el("h3", { text: "Races" }));
   pane.appendChild(check("Apply Senate and House calls to the control totals", s.settings.applyCallsToControl, (v) => update((st) => { st.settings.applyCallsToControl = v; })));
-  pane.appendChild(el("p", { class: "hint", text: "Off by default so a call card cannot move the big numbers by surprise. Turn it on only if you want one seat added when you call." }));
+  pane.appendChild(el("p", { class: "hint", text: "Off by default. This only changes the manual Senate and House boards, not the AP/NYT seat trackers." }));
   pane.appendChild(el("button", { type: "button", class: "bigbtn", text: "Add race", onClick: () => {
     const id = uid("race");
     update((st) => {

@@ -1,34 +1,19 @@
 import { el, clear, topbar, starsLabel } from "./util.js";
 
-const ART = "brand-reference/election-night-key-art.png";
-
 export function mountHolding(node, state) {
   paintHold(node, state);
-  node._patch = (s) => {
-    const title = node.querySelector("[data-brand]");
-    if (title) title.textContent = s.brand.title;
-    const show = node.querySelector("[data-show]");
-    if (show) show.textContent = s.brand.show;
-  };
+  node._patch = (s) => paintHold(node, s);
 }
 
 function paintHold(node, state) {
   clear(node);
-  const blur = el("img", { class: "hold-blur", alt: "", src: ART, draggable: "false" });
-  const fg = el("img", { class: "hold-fg", alt: "Election Night", src: ART, draggable: "false" });
-  const fallback = el("div", { class: "hold-fallback" }, [
-    starsLabel("LIVE"),
-    el("h1", { class: "h-display silver", "data-brand": "1", text: state.brand.title }),
-    el("p", { class: "subhead", "data-show": "1", text: state.brand.show })
-  ]);
-  fallback.hidden = true;
-  const fail = () => {
-    fallback.hidden = false;
-    if (fg.parentNode) fg.remove();
-    if (blur.parentNode) blur.remove();
-  };
-  fg.addEventListener("error", fail);
-  node.appendChild(el("div", { class: "hold" }, [blur, el("div", { class: "hold-shade" }), fg, fallback]));
+  node.appendChild(el("div", { class: "hold" }, [
+    el("div", { class: "hold-fallback" }, [
+      starsLabel("LIVE"),
+      el("h1", { class: "h-display silver", "data-brand": "1", text: state.brand.title }),
+      el("p", { class: "subhead", "data-show": "1", text: state.brand.show })
+    ])
+  ]));
 }
 
 export function mountSegment(node, state) {

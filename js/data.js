@@ -154,12 +154,33 @@ export const SITES = [
   { id: "kalshi", name: "Kalshi", url: "https://kalshi.com/", mode: "safari", group: "Markets", embed: "unknown", scale: 1, x: 0, y: 0 }
 ];
 
-export const SCREENS = ["holding", "segment", "senate", "house", "map", "call", "tally", "countdown", "kalshi", "sites", "site", "media", "mediashow"];
+export const DEFAULT_KALSHI_PROXY = "https://enight-kalshi-proxy.justin-0ab.workers.dev";
+
+/* Dashboard sections. `on` is the default. Manual data screens start off. */
+export const CATEGORIES = [
+  { id: "seats", label: "Seat trackers", on: true },
+  { id: "show", label: "Show", on: true },
+  { id: "kalshi", label: "Kalshi markets", on: true },
+  { id: "sites", label: "Websites", on: true },
+  { id: "media", label: "Media / Graphics", on: true },
+  { id: "map", label: "Map", on: false },
+  { id: "races", label: "Race calls / tallies", on: false },
+  { id: "countdown", label: "Poll closes", on: false },
+  { id: "manual", label: "Manual boards", on: false }
+];
+
+export function defaultCategories() {
+  const out = {};
+  for (const cat of CATEGORIES) out[cat.id] = cat.on;
+  return out;
+}
+
+export const SCREENS = ["home", "holding", "segment", "senate", "house", "senateManual", "houseManual", "map", "call", "tally", "countdown", "kalshi", "sites", "site", "media", "mediashow"];
 
 export function freshState() {
   return {
     version: 1,
-    screen: "holding",
+    screen: "home",
     live: {
       raceId: "oh-sen",
       segmentId: "standby",
@@ -173,7 +194,9 @@ export function freshState() {
       timezone: "America/New_York",
       hideMs: 8000,
       autoClosePolls: true,
-      kalshiProxy: "",
+      kalshiProxy: DEFAULT_KALSHI_PROXY,
+      feedDate: "2026-11-03",
+      categories: defaultCategories(),
       kalshiRefreshSec: 20,
       applyCallsToControl: false,
       markup: {

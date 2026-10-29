@@ -10,18 +10,18 @@ let pointerId = null;
 
 export function initMarkup(opts) {
   canvas = opts.canvas;
-  bar = opts.bar;
-  toggleBtn = opts.toggleBtn;
+  bar = opts.bar || null;
+  toggleBtn = opts.toggleBtn || null;
   getMarkup = opts.getMarkup;
-  opts.undoBtn.addEventListener("click", (e) => {
+  if (opts.undoBtn) opts.undoBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     undo();
   });
-  opts.clearBtn.addEventListener("click", (e) => {
+  if (opts.clearBtn) opts.clearBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     clearInk();
   });
-  toggleBtn.addEventListener("click", (e) => {
+  if (toggleBtn) toggleBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     setOn(!on);
   });
@@ -43,9 +43,13 @@ export function setMarkupListener(fn) {
 
 export function setOn(value) {
   on = !!value;
-  canvas.classList.toggle("on", on);
-  bar.hidden = !on;
-  toggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  if (canvas) canvas.classList.toggle("on", on);
+  if (bar) bar.hidden = !on;
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    toggleBtn.classList.toggle("on", on);
+    toggleBtn.textContent = on ? "Draw on" : "Draw";
+  }
   if (!on) {
     pointerId = null;
     active = null;

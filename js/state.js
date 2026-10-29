@@ -1,4 +1,4 @@
-import { SCREENS, freshState } from "./data.js";
+import { SCREENS, freshState, DEFAULT_KALSHI_PROXY, defaultCategories } from "./data.js";
 
 const KEY = "enight-display-v1";
 
@@ -153,17 +153,25 @@ function merge(base, saved) {
 
 function normalize(s) {
   s.version = 1;
-  if (!SCREENS.includes(s.screen)) s.screen = "holding";
+  if (s.screen === "sites" || s.screen === "media") s.screen = "home";
+  if (!SCREENS.includes(s.screen)) s.screen = "home";
   s.live = s.live || {};
   s.settings = s.settings || {};
   s.settings.markup = s.settings.markup || {};
   s.settings.hideMs = clampNum(s.settings.hideMs, 3000, 60000, 8000);
   s.settings.kalshiRefreshSec = clampNum(s.settings.kalshiRefreshSec, 5, 120, 20);
   s.settings.electionDate = /^\d{4}-\d{2}-\d{2}$/.test(s.settings.electionDate) ? s.settings.electionDate : "2026-11-03";
+  s.settings.feedDate = /^\d{4}-\d{2}-\d{2}$/.test(s.settings.feedDate) ? s.settings.feedDate : "2026-11-03";
   s.settings.timezone = s.settings.timezone || "America/New_York";
   s.settings.autoClosePolls = s.settings.autoClosePolls !== false;
   s.settings.applyCallsToControl = !!s.settings.applyCallsToControl;
-  s.settings.kalshiProxy = String(s.settings.kalshiProxy || "").trim();
+  s.settings.kalshiProxy = String(s.settings.kalshiProxy || "").trim() || DEFAULT_KALSHI_PROXY;
+  const cats = defaultCategories();
+  const savedCats = s.settings.categories && typeof s.settings.categories === "object" ? s.settings.categories : {};
+  for (const key of Object.keys(cats)) {
+    if (typeof savedCats[key] === "boolean") cats[key] = savedCats[key];
+  }
+  s.settings.categories = cats;
   const mk = s.settings.markup;
   mk.color = /^#[0-9a-fA-F]{6}$/.test(mk.color) ? mk.color : "#ffe14a";
   mk.size = clampNum(mk.size, 4, 48, 18);

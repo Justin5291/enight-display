@@ -1,15 +1,20 @@
 import { mountSenate, mountHouse, mountMap, mountCountdown } from "./screen-control.js";
+import { mountSenateFeed, mountHouseFeed } from "./screen-seats.js";
 import { mountCall, mountTally } from "./screen-races.js";
 import { mountHolding, mountSegment } from "./screen-show.js";
 import { mountKalshi } from "./screen-kalshi.js";
 import { mountSites, mountSite } from "./screen-sites.js";
 import { mountMedia, mountMediaShow } from "./screen-media.js";
+import { mountHome } from "./screen-home.js";
 
 const mounts = {
+  home: mountHome,
   holding: mountHolding,
   segment: mountSegment,
-  senate: mountSenate,
-  house: mountHouse,
+  senate: mountSenateFeed,
+  house: mountHouseFeed,
+  senateManual: mountSenate,
+  houseManual: mountHouse,
   map: mountMap,
   call: mountCall,
   tally: mountTally,

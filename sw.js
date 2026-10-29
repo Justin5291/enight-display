@@ -1,5 +1,5 @@
 /* App-shell cache. Network first, so a show-day fix still arrives, then fall back offline. */
-const CACHE = "enight-shell-v1";
+const CACHE = "enight-shell-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,21 +9,25 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/apple-touch-icon.png",
   "./icons/icon-512.png",
-  "./brand-reference/election-night-key-art.png",
   "./js/app.js",
   "./js/data.js",
   "./js/util.js",
   "./js/state.js",
   "./js/markup.js",
   "./js/kalshi.js",
+  "./js/nyt.js",
+  "./js/pages.js",
+  "./js/dock.js",
   "./js/media-db.js",
   "./js/screens.js",
   "./js/screen-control.js",
+  "./js/screen-seats.js",
   "./js/screen-races.js",
   "./js/screen-show.js",
   "./js/screen-kalshi.js",
   "./js/screen-sites.js",
   "./js/screen-media.js",
+  "./js/screen-home.js",
   "./js/operator.js",
   "./js/settings.js"
 ];

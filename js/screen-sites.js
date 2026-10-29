@@ -1,6 +1,7 @@
 import { el, clear, topbar, starsLabel, clamp } from "./util.js";
 import { getState, update } from "./state.js";
 import { flash } from "./operator.js";
+import { markupOn } from "./markup.js";
 
 export function mountSites(node, state) {
   paintDash(node, state);
@@ -162,7 +163,7 @@ function bindFrame(node, id) {
   const ptrs = new Map();
   let base = null;
   view.addEventListener("pointerdown", (e) => {
-    if (!document.body.classList.contains("controls-open")) return;
+    if (markupOn()) return;
     view.setPointerCapture(e.pointerId);
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     base = { ...node._frame, pts: snapshot(ptrs) };

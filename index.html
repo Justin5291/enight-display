@@ -22,15 +22,16 @@
         <div class="atmosphere" aria-hidden="true"></div>
         <div id="screen"></div>
         <canvas id="ink" aria-hidden="true"></canvas>
-        <div id="inkbar" hidden>
-          <button type="button" id="ink-toggle" aria-pressed="true">Draw</button>
-          <button type="button" id="ink-undo">Undo</button>
-          <button type="button" id="ink-clear">Clear</button>
-        </div>
       </div>
     </div>
-    <button type="button" id="hot-reveal" aria-label="Show controls"></button>
-    <button type="button" id="hot-sites" aria-label="Sites dashboard"></button>
+    <div id="dock">
+      <button type="button" id="dock-home">Home</button>
+      <button type="button" id="dock-undo">Undo</button>
+      <button type="button" id="dock-draw" aria-pressed="false">Draw</button>
+      <div id="dock-recent"></div>
+      <button type="button" id="dock-gear">Setup</button>
+    </div>
+    <div id="toast" hidden></div>
     <div id="op" hidden></div>
     <div id="sheet" hidden></div>
   </div>

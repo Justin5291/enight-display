@@ -53,16 +53,21 @@ export function refreshOperator() {
   else fillFigures();
 }
 
+let toastTimer = null;
+
 export function flash(message) {
   note = message || "";
-  if (!operatorOpen()) setOperatorOpen(true);
-  else {
-    const slot = op.querySelector("[data-note]");
-    if (slot) {
-      slot.textContent = note;
-      slot.hidden = !note;
-    }
-  }
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = note;
+  toast.hidden = !note;
+  clearTimeout(toastTimer);
+  if (note) toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
+}
+
+function quoteError(s) {
+  const quote = getQuote(s.live.marketId);
+  return quote && quote.error ? quote.error : "";
 }
 
 function sig(s) {
@@ -81,6 +86,7 @@ function sig(s) {
     s.segments.map((g) => g.id).join(","),
     s.states.map((st) => st.abbr + st.status).join(""),
     s.settings.kalshiProxy ? "1" : "0",
+    quoteError(s),
     markupOn() ? "d" : "o"
   ].join("|");
 }
@@ -332,7 +338,7 @@ function kalshiContext(box, s) {
     note = "";
     update((st) => {
       const id = uid("kx");
-      st.markets.push({ id: id, ticker: parsed.ticker, series: parsed.series, label: parsed.ticker, sourceUrl: parsed.sourceUrl });
+      st.markets.push({ id: id, ticker: parsed.ticker, series: parsed.series, label: parsed.ticker, sourceUrl: parsed.sourceUrl, range: "ALL" });
       st.live.marketId = id;
       st.screen = "kalshi";
     });
@@ -353,9 +359,9 @@ function kalshiContext(box, s) {
   }
   const quote = getQuote(s.live.marketId);
   if (quote && quote.error && quote.error !== "proxy") {
-    box.appendChild(el("div", { class: "warn", text: "Kalshi: " + quote.error }));
-  } else if (quote && quote.error === "proxy") {
-    /* already explained above */
+    const stale = quote.outcomes && quote.outcomes.length;
+    const text = stale ? "Kalshi refresh failed. Still showing the last update." : "Kalshi: " + quote.error;
+    box.appendChild(el("div", { class: "warn", text: text }));
   }
   const open = el("button", { type: "button", class: "bigbtn", text: "Open Kalshi in Safari" });
   open.addEventListener("click", () => {
