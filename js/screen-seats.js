@@ -1,4 +1,4 @@
-import { el, clear, topbar } from "./util.js";
+import { el, clear, topbar, kalshiBadge } from "./util.js";
 import { getSeats } from "./nyt.js";
 
 export function mountSenateFeed(node, state) {
@@ -26,7 +26,8 @@ function paintSeat(node, state, chamber) {
   node.appendChild(el("div", { class: "seatboard" }, [
     row,
     el("div", { class: "seat-called", text: called }),
-    el("div", { class: "seat-credit", text: "Race calls: AP via NYT" })
+    el("div", { class: "seat-credit", text: "Race calls: AP via NYT" }),
+    el("div", { class: "seat-sponsor" }, [kalshiBadge()])
   ]));
 }
 

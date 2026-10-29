@@ -67,6 +67,25 @@ export function starsLabel(text) {
   ]);
 }
 
+export const KALSHI_LOGO = "assets/kalshi-logo.webp";
+
+export function kalshiLogo(size) {
+  const kind = size ? " kalshi-logo-" + size : "";
+  return el("img", {
+    class: "kalshi-logo" + kind,
+    src: KALSHI_LOGO,
+    alt: "Kalshi",
+    draggable: "false"
+  });
+}
+
+export function kalshiBadge() {
+  return el("div", { class: "kx-badge" }, [
+    el("span", { text: "Odds powered by" }),
+    kalshiLogo("badge")
+  ]);
+}
+
 export function topbar(brand, page) {
   const logo = el("span", { class: "logo-mark", text: brand.logo || "LOGO" });
   if (!brand.logo) logo.hidden = true;

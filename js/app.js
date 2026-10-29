@@ -1,6 +1,6 @@
 import { loadState, getState, update, subscribe, visualKey } from "./state.js";
 import { mount, patch, tick } from "./screens.js";
-import { initMarkup, clearInk } from "./markup.js";
+import { initMarkup, clearInk, setMarkupEnabled } from "./markup.js";
 import { initDock, trackPage } from "./dock.js";
 import { initSettings, openSettings } from "./settings.js";
 import { startKalshi } from "./kalshi.js";
@@ -15,6 +15,7 @@ initMarkup({
   canvas: document.getElementById("ink"),
   toggleBtn: document.getElementById("dock-draw"),
   undoBtn: document.getElementById("dock-undo"),
+  clearBtn: document.getElementById("dock-clear"),
   getMarkup: () => getState().settings.markup
 });
 
@@ -28,6 +29,7 @@ initSettings();
 function render() {
   const s = getState();
   const key = visualKey(s);
+  setMarkupEnabled(s.screen !== "home");
   if (seen !== null && key !== seen && s.settings.markup.autoClear) clearInk();
   const changed = key !== seen;
   seen = key;

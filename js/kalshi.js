@@ -12,6 +12,7 @@ const MAX_CANDLES = 4000;
 const CANDLE_MS = 5 * 60 * 1000;
 const PALETTE = ["#f0d78c", "#34d399", "#a78bfa", "#fb923c", "#22d3ee", "#f472b6"];
 const RANGES = {
+  "1H": { period: 1, span: 60 * 60 },
   "1D": { period: 1, span: 24 * 60 * 60 },
   "1W": { period: 60, span: 7 * 24 * 60 * 60 },
   "1M": { period: 60, span: 30 * 24 * 60 * 60 },
@@ -58,6 +59,12 @@ export function extractSeries(ticker) {
 export function normalizeRange(range) {
   const key = String(range || "ALL").toUpperCase();
   return RANGES[key] ? key : "ALL";
+}
+
+export function rangeSpec(range) {
+  const key = normalizeRange(range);
+  const spec = RANGES[key];
+  return { range: key, period: spec.period, span: spec.span };
 }
 
 export function priceToPct(value) {
@@ -331,7 +338,7 @@ async function refreshSelected() {
     cache.set(market.id, {
       ...kept,
       error: e.message || "Kalshi request failed",
-      updated: kept.updated || Date.now()
+      updated: kept.updated || 0
     });
     onUpdate();
   } finally {

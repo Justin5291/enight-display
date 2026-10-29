@@ -1,4 +1,5 @@
-import { SCREENS, freshState, DEFAULT_KALSHI_PROXY, defaultCategories } from "./data.js";
+import { SCREENS, freshState, DEFAULT_KALSHI_PROXY, defaultCategories, DEFAULTS_VERSION, defaultKalshiMarket, isUneditedShippedSite } from "./data.js";
+import { normalizeRange } from "./kalshi.js";
 
 const KEY = "enight-display-v1";
 
@@ -22,13 +23,34 @@ function emit() {
 export function loadState() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) state = normalize(merge(freshState(), JSON.parse(raw)));
-    else state = freshState();
+    if (raw) {
+      const saved = JSON.parse(raw);
+      const before = readDefaultsVersion(saved);
+      state = hydrate(saved);
+      if (before < DEFAULTS_VERSION) flushSave();
+    } else state = normalize(freshState());
   } catch (e) {
-    state = freshState();
+    state = normalize(freshState());
     window.__enightLastError = "Saved show data could not be read. Started from the preset.";
   }
   return state;
+}
+
+/* Merge a saved show onto the preset, then run the one-time defaults migration.
+   The preset's defaultsVersion must not hide a save that never stored one. */
+export function hydrate(saved) {
+  const source = saved && typeof saved === "object" ? saved : {};
+  const merged = merge(freshState(), source);
+  merged.settings = merged.settings || {};
+  merged.settings.defaultsVersion = readDefaultsVersion(source);
+  return normalize(merged);
+}
+
+function readDefaultsVersion(saved) {
+  const settings = saved && saved.settings;
+  if (!settings || typeof settings !== "object" || !Object.prototype.hasOwnProperty.call(settings, "defaultsVersion")) return 0;
+  const n = Number(settings.defaultsVersion);
+  return Number.isFinite(n) ? n : 0;
 }
 
 export function update(fn) {
@@ -75,7 +97,7 @@ export function importPayload(obj) {
   const copy = { ...obj };
   delete copy.exportedAt;
   delete copy.note;
-  replaceState(merge(freshState(), copy));
+  replaceState(hydrate(copy));
 }
 
 export function resetShow() {
@@ -229,6 +251,11 @@ function normalize(s) {
     site.group = site.group || "Other";
     if (!site.id) site.id = "site-" + Math.random().toString(36).slice(2, 8);
   }
+  migrateDefaults(s);
+  for (const market of s.markets) {
+    market.range = normalizeRange(market.range);
+    if (!market.id) market.id = "kx-" + Math.random().toString(36).slice(2, 8);
+  }
   if (!Array.isArray(s.media)) s.media = [];
   if (!s.races.some((r) => r.id === s.live.raceId)) s.live.raceId = s.races[0] ? s.races[0].id : null;
   if (!s.segments.some((g) => g.id === s.live.segmentId)) s.live.segmentId = s.segments[0] ? s.segments[0].id : null;
@@ -237,6 +264,19 @@ function normalize(s) {
   if (s.live.mediaId && !s.media.some((m) => m.id === s.live.mediaId)) s.live.mediaId = null;
   if (!s.states.some((st) => st.abbr === s.live.mapState)) s.live.mapState = s.states[0] ? s.states[0].abbr : "OH";
   return s;
+}
+
+function migrateDefaults(s) {
+  const seen = Number(s.settings && s.settings.defaultsVersion) || 0;
+  if (seen >= DEFAULTS_VERSION) return;
+  if (Array.isArray(s.sites)) s.sites = s.sites.filter((site) => !isUneditedShippedSite(site));
+  if (!Array.isArray(s.markets) || !s.markets.length) {
+    const market = defaultKalshiMarket();
+    s.markets = [market];
+    s.live = s.live || {};
+    s.live.marketId = market.id;
+  }
+  s.settings.defaultsVersion = DEFAULTS_VERSION;
 }
 
 function num(v) {

@@ -1,9 +1,10 @@
 /* App-shell cache. Network first, so a show-day fix still arrives, then fall back offline. */
-const CACHE = "enight-shell-v2";
+const CACHE = "enight-shell-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./css/app.css",
+  "./assets/kalshi-logo.webp",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",

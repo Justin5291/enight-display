@@ -1,5 +1,8 @@
-import { el, svg, clear, topbar, starsLabel, clamp } from "./util.js";
-import { getQuote } from "./kalshi.js";
+import { el, svg, clear, topbar, starsLabel, clamp, kalshiLogo, formatClock } from "./util.js";
+import { getQuote, normalizeRange, pokeKalshi } from "./kalshi.js";
+import { update } from "./state.js";
+
+const RANGE_KEYS = ["1H", "1D", "1W", "1M", "ALL"];
 
 export function mountKalshi(node, state) {
   paint(node, state);
@@ -49,6 +52,7 @@ function paint(node, state) {
   node.appendChild(topbar(state.brand, "KALSHI"));
   if (!market) {
     node.appendChild(el("div", { class: "kx-empty" }, [
+      kalshiLogo("lg"),
       starsLabel("KALSHI"),
       el("h1", { class: "h-display silver", text: "MARKETS" })
     ]));
@@ -59,14 +63,77 @@ function paint(node, state) {
   const cat = categoryText(quote);
   const range = (quote && quote.range) || market.range || "ALL";
   const head = el("div", { class: "kx-head" }, [
-    el("div", { class: "kx-cat", text: cat }),
-    el("h1", { class: "kx-title", text: title })
+    el("div", { class: "kx-title-row" }, [
+      kalshiLogo("lg"),
+      el("h1", { class: "kx-title", text: title })
+    ]),
+    el("div", { class: "kx-tools" }, [
+      el("div", { class: "kx-cat", text: cat }),
+      rangeBar(market),
+      updatedEl(quote, state.settings.timezone)
+    ])
   ]);
   const chart = el("div", { class: "kx-chart" }, [
+    sponsorMark(),
     chartSvg(outcomes, range, state.settings.timezone)
   ]);
   const table = el("div", { class: "kx-table" + (outcomes.length === 1 ? " one" : "") }, outcomes.map(outcomeRow));
   node.appendChild(el("div", { class: "kx" }, [head, chart, table]));
+}
+
+function sponsorMark() {
+  return el("div", { class: "kx-sponsor" }, [
+    el("span", { class: "kx-sponsor-label", text: "Sponsored by:" }),
+    kalshiLogo("chart")
+  ]);
+}
+
+function rangeBar(market) {
+  const current = normalizeRange(market.range);
+  const bar = el("div", { class: "kx-ranges", role: "group", "aria-label": "Chart range" });
+  for (const key of RANGE_KEYS) {
+    const btn = el("button", {
+      type: "button",
+      class: "kx-range" + (key === current ? " on" : ""),
+      text: key,
+      "aria-pressed": key === current ? "true" : "false"
+    });
+    btn.addEventListener("click", () => {
+      if (normalizeRange(market.range) === key) return;
+      update((st) => {
+        const row = st.markets.find((m) => m.id === market.id);
+        if (row) row.range = key;
+      });
+      pokeKalshi();
+    });
+    bar.appendChild(btn);
+  }
+  return bar;
+}
+
+function updatedEl(quote, timeZone) {
+  const text = quote && quote.updated ? updatedText(quote.updated, timeZone) : "";
+  const node = el("div", { class: "kx-updated", text: text });
+  if (!text) node.hidden = true;
+  return node;
+}
+
+function updatedText(ms, timeZone) {
+  const tz = timeZone || "America/New_York";
+  const clock = formatClock(ms, tz).replace(/\u202f/g, " ").replace(/\u00a0/g, " ");
+  if (!clock) return "";
+  return "Updated " + clock + " " + zoneTag(tz);
+}
+
+function zoneTag(timeZone) {
+  if (timeZone === "America/New_York" || timeZone === "US/Eastern") return "ET";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: timeZone, timeZoneName: "short" }).formatToParts(new Date());
+    const name = parts.find((part) => part.type === "timeZoneName");
+    return name && name.value ? name.value : "ET";
+  } catch (e) {
+    return "ET";
+  }
 }
 
 function categoryText(quote) {
@@ -287,6 +354,9 @@ function dateTicks(t0, t1, range, timeZone) {
 function formatTick(ms, span, range, timeZone) {
   const tz = timeZone || "America/New_York";
   const d = new Date(ms);
+  if (range === "1H" || span < 3 * 60 * 60 * 1000) {
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(d);
+  }
   if (range === "1D" || span < 36 * 60 * 60 * 1000) {
     return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric" }).format(d);
   }

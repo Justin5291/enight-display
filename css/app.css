@@ -663,7 +663,21 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   flex-direction: column;
   gap: 0.35em;
 }
-.kx-head { min-width: 0; flex: 0 0 auto; }
+.kx-head { min-width: 0; flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.18em; }
+.kx-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  min-width: 0;
+}
+.kx-title-row .kx-title { flex: 1; min-width: 0; }
+.kx-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  min-width: 0;
+}
+.kx-tools .kx-cat { flex: 1; min-width: 0; }
 .kx-cat {
   min-height: 1.15em;
   letter-spacing: 0.16em;
@@ -671,6 +685,88 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   color: var(--muted);
   font-size: 0.78em;
   font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kx-ranges {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 0.12em;
+  padding: 0.1em;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.kx-range {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(244, 247, 251, 0.72);
+  font-family: var(--font-display);
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  min-height: 1.85em;
+  min-width: 2.15em;
+  padding: 0.2em 0.42em;
+  border-radius: 999px;
+}
+.kx-range.on {
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+}
+.kx-updated {
+  flex: none;
+  font-size: 0.72em;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.kx-updated[hidden] { display: none; }
+.kalshi-logo {
+  display: block;
+  width: auto;
+  height: 1.15em;
+  max-width: none;
+  object-fit: contain;
+  object-position: left center;
+  background: transparent;
+  border: 0;
+  flex: none;
+  pointer-events: none;
+}
+.kalshi-logo-sm { height: 1.05em; }
+.kalshi-logo-md { height: 1.45em; }
+.kalshi-logo-lg { height: 2.05em; }
+.kalshi-logo-badge { height: 1.2em; }
+.kx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: rgba(244, 247, 251, 0.78);
+  font-family: var(--font-display);
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tile-logo { display: flex; align-items: center; min-height: 1.15em; }
+.home-sponsor, .seat-sponsor {
+  display: flex;
+  justify-content: center;
+  flex: none;
+}
+.home-sponsor { padding-top: 0.1em; }
+.hold-sponsor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.85em;
+  display: flex;
+  justify-content: center;
+  z-index: 2;
 }
 .kx-title {
   margin: 0.06em 0 0;
@@ -686,14 +782,49 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   overflow: hidden;
 }
 .kx-chart {
+  position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   background: rgba(2, 8, 28, 0.38);
   border-radius: 0.45em;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  padding: 0.15em 0.2em 0;
+  padding: 0.4em 0.35em 0.15em;
 }
-.kx-chart svg { width: 100%; height: 100%; display: block; }
+.kx-chart svg {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.kx-sponsor {
+  position: relative;
+  align-self: flex-start;
+  flex: none;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0 0 0.2em 0.2em;
+  padding: 0.22em 0.6em 0.22em 0.65em;
+  border-radius: 0.35em;
+  background: rgba(4, 10, 28, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+.kx-sponsor-label {
+  color: #f4f7fb;
+  font-family: var(--font-display);
+  font-size: 1.35em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.kalshi-logo-chart { height: 1.85em; }
 .kx-table {
   flex: 0 0 auto;
   display: flex;
@@ -1026,6 +1157,7 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
 #dock {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
@@ -1048,16 +1180,40 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   min-width: 64px;
   padding: 0 12px;
 }
-#dock-draw[aria-pressed="true"] {
-  background: var(--red);
+#dock-home { flex: none; }
+#dock-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+#dock #dock-draw {
+  min-height: 50px;
+  min-width: 92px;
+  padding: 0 18px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: white;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+  background: rgba(179, 22, 28, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+#dock #dock-draw[aria-pressed="true"] {
+  background: var(--red-bright);
+  color: white;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+#dock button:disabled {
+  opacity: 0.32;
+  pointer-events: none;
 }
 #dock-recent {
   display: flex;
   gap: 6px;
-  min-width: 0;
-  flex: 1;
+  min-width: 72px;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 .dock-chip {
   display: inline-flex;
@@ -1091,7 +1247,6 @@ body.controls-open .tile-selected { stroke: var(--gold); stroke-width: 6; }
   white-space: nowrap;
 }
 #dock-gear {
-  margin-left: auto;
   background: transparent;
   color: rgba(244, 247, 251, 0.5);
   min-width: 44px;

@@ -136,9 +136,10 @@ export const SEGMENTS = [
   { id: "off", time: "10:00 PM ET", code: "OFF AIR", title: "Off Air", guests: [], detail: "", sponsor: false, sponsorName: "", sponsorLine: "" }
 ];
 
-/* embed: yes = known to allow iframes, no = blocked, unknown = not confirmed.
-   mode is what the operator actually uses and can be switched per site. */
-export const SITES = [
+/* Previously shipped website presets. embed: yes = known to allow iframes,
+   no = blocked, unknown = not confirmed. Fresh installs no longer seed these.
+   Migration removes a saved copy only when it still matches this snapshot. */
+export const SHIPPED_SITES = [
   { id: "ddhq", name: "Decision Desk HQ", url: "https://decisiondeskhq.com/", mode: "embed", group: "Results", embed: "yes", scale: 1, x: 0, y: 0 },
   { id: "fox", name: "Fox News Elections", url: "https://www.foxnews.com/elections", mode: "embed", group: "Networks", embed: "yes", scale: 1, x: 0, y: 0 },
   { id: "fl", name: "Florida Results", url: "https://results.elections.myflorida.com/", mode: "embed", group: "Florida", embed: "yes", scale: 1, x: 0, y: 0 },
@@ -154,7 +155,38 @@ export const SITES = [
   { id: "kalshi", name: "Kalshi", url: "https://kalshi.com/", mode: "safari", group: "Markets", embed: "unknown", scale: 1, x: 0, y: 0 }
 ];
 
+export function isUneditedShippedSite(site) {
+  if (!site || !site.id) return false;
+  const shipped = SHIPPED_SITES.find((row) => row.id === site.id);
+  if (!shipped) return false;
+  const mode = site.mode === "embed" ? "embed" : "safari";
+  return site.name === shipped.name
+    && site.url === shipped.url
+    && mode === shipped.mode
+    && (site.group || "Other") === shipped.group
+    && (site.embed || "unknown") === shipped.embed
+    && Number(site.scale) === Number(shipped.scale)
+    && Number(site.x) === Number(shipped.x)
+    && Number(site.y) === Number(shipped.y);
+}
+
 export const DEFAULT_KALSHI_PROXY = "https://enight-kalshi-proxy.justin-0ab.workers.dev";
+
+/* Bump when shipped defaults change. Missing or lower versions migrate once. */
+export const DEFAULTS_VERSION = 2;
+
+export const DEFAULT_KALSHI_MARKET = {
+  id: "kx-senate-control",
+  ticker: "CONTROLS-2026",
+  series: "CONTROLS",
+  label: "Senate control",
+  sourceUrl: "https://kalshi.com/markets/controls/senate-winner/controls-2026",
+  range: "ALL"
+};
+
+export function defaultKalshiMarket() {
+  return clone(DEFAULT_KALSHI_MARKET);
+}
 
 /* Dashboard sections. `on` is the default. Manual data screens start off. */
 export const CATEGORIES = [
@@ -184,7 +216,7 @@ export function freshState() {
     live: {
       raceId: "oh-sen",
       segmentId: "standby",
-      marketId: null,
+      marketId: DEFAULT_KALSHI_MARKET.id,
       siteId: null,
       mediaId: null,
       mapState: "OH"
@@ -198,6 +230,7 @@ export function freshState() {
       feedDate: "2026-11-03",
       categories: defaultCategories(),
       kalshiRefreshSec: 20,
+      defaultsVersion: DEFAULTS_VERSION,
       applyCallsToControl: false,
       markup: {
         color: "#ffe14a",
@@ -216,8 +249,8 @@ export function freshState() {
     races: RACES.map(clone),
     states: STATES.map(clone),
     segments: SEGMENTS.map(clone),
-    markets: [],
-    sites: SITES.map(clone),
+    markets: [defaultKalshiMarket()],
+    sites: [],
     media: []
   };
 }

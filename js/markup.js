@@ -1,8 +1,11 @@
 let canvas = null;
 let bar = null;
 let toggleBtn = null;
+let undoBtn = null;
+let clearBtn = null;
 let getMarkup = () => ({ color: "#ffe14a", size: 18, tool: "pen" });
 let on = false;
+let locked = false;
 let listener = () => {};
 let strokes = [];
 let active = null;
@@ -12,13 +15,16 @@ export function initMarkup(opts) {
   canvas = opts.canvas;
   bar = opts.bar || null;
   toggleBtn = opts.toggleBtn || null;
+  undoBtn = opts.undoBtn || null;
+  clearBtn = opts.clearBtn || null;
   getMarkup = opts.getMarkup;
-  if (opts.undoBtn) opts.undoBtn.addEventListener("click", (e) => {
+  if (undoBtn) undoBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     undo();
   });
-  if (opts.clearBtn) opts.clearBtn.addEventListener("click", (e) => {
+  if (clearBtn) clearBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    if (locked) return;
     clearInk();
   });
   if (toggleBtn) toggleBtn.addEventListener("click", (e) => {
@@ -41,7 +47,28 @@ export function setMarkupListener(fn) {
   listener = fn || (() => {});
 }
 
+export function setMarkupEnabled(enabled) {
+  const next = !enabled;
+  if (next === locked) {
+    syncLock();
+    return;
+  }
+  locked = next;
+  if (locked) {
+    if (on) setOn(false);
+    clearInk();
+  }
+  syncLock();
+}
+
+function syncLock() {
+  if (toggleBtn) toggleBtn.disabled = locked;
+  if (undoBtn) undoBtn.disabled = locked;
+  if (clearBtn) clearBtn.disabled = locked;
+}
+
 export function setOn(value) {
+  if (locked && value) return;
   on = !!value;
   if (canvas) canvas.classList.toggle("on", on);
   if (bar) bar.hidden = !on;
@@ -65,6 +92,7 @@ export function clearInk() {
 }
 
 export function undo() {
+  if (locked) return;
   if (active) {
     active = null;
     pointerId = null;

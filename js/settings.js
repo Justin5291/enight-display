@@ -185,7 +185,7 @@ function renderKalshi(pane) {
   pane.appendChild(field("Proxy base URL", input));
   pane.appendChild(field("Refresh seconds", numInput(s.settings.kalshiRefreshSec, (n) => update((st) => { st.settings.kalshiRefreshSec = n; }))));
   pane.appendChild(el("h3", { text: "Saved markets" }));
-  pane.appendChild(el("p", { class: "hint", text: "Add a market from the home dashboard, or edit saved ones here. Chart range is saved on each one. The on-air screen has no range buttons." }));
+  pane.appendChild(el("p", { class: "hint", text: "Add a market from the home dashboard, or edit saved ones here. Chart range is saved on each market. The Kalshi screen has the same ranges." }));
   if (!s.markets.length) pane.appendChild(el("p", { class: "hint", text: "None saved yet." }));
   s.markets.forEach((market, index) => {
     const box = el("div", { class: "editor" });
@@ -201,6 +201,7 @@ function renderKalshi(pane) {
       pokeKalshi();
     })));
     box.appendChild(field("Chart range", selectInput(market.range || "ALL", [
+      ["1H", "1H"],
       ["1D", "1D"],
       ["1W", "1W"],
       ["1M", "1M"],
@@ -585,7 +586,7 @@ function renderBackup(pane) {
     resetShow();
     render();
   }));
-  pane.appendChild(el("p", { class: "hint", text: "Reset restores the preset races, sites, run of show, and the 53–47 / 218–214 starting numbers." }));
+  pane.appendChild(el("p", { class: "hint", text: "Reset restores the preset races, the Senate control market, an empty website list, the run of show, and the 53–47 / 218–214 starting numbers." }));
 }
 
 function removeMedia(id) {
