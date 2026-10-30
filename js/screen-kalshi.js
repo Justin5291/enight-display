@@ -59,7 +59,7 @@ function paint(node, state) {
     return;
   }
   const outcomes = quote && Array.isArray(quote.outcomes) ? quote.outcomes : [];
-  const title = (quote && quote.title) || market.label || market.ticker;
+  const title = market.category && market.label ? market.label : ((quote && quote.title) || market.label || market.ticker);
   const cat = categoryText(quote);
   const range = (quote && quote.range) || market.range || "ALL";
   const head = el("div", { class: "kx-head" }, [

@@ -1,3 +1,4 @@
+import { RACE_MARKETS } from "./kalshi-races.js";
 /* Seed data for Election Night 2026. Poll times other than the ones named
    in the spec are best-knowledge and flagged verified:false. */
 
@@ -173,7 +174,7 @@ export function isUneditedShippedSite(site) {
 export const DEFAULT_KALSHI_PROXY = "https://enight-kalshi-proxy.justin-0ab.workers.dev";
 
 /* Bump when shipped defaults change. Missing or lower versions migrate once. */
-export const DEFAULTS_VERSION = 2;
+export const DEFAULTS_VERSION = 3;
 
 export const DEFAULT_KALSHI_MARKET = {
   id: "kx-senate-control",
@@ -188,6 +189,11 @@ export function defaultKalshiMarket() {
   return clone(DEFAULT_KALSHI_MARKET);
 }
 
+/* Senate control first, then every curated race, in list order. */
+export function defaultMarkets() {
+  return RACE_MARKETS.map((row) => clone(row));
+}
+
 /* Dashboard sections. `on` is the default. Manual data screens start off. */
 export const CATEGORIES = [
   { id: "seats", label: "Seat trackers", on: true },
@@ -195,7 +201,8 @@ export const CATEGORIES = [
   { id: "kalshi", label: "Kalshi markets", on: true },
   { id: "sites", label: "Websites", on: true },
   { id: "media", label: "Media / Graphics", on: true },
-  { id: "map", label: "Map", on: false },
+  { id: "maps", label: "Results maps (Senate, Governor, House)", on: true },
+  { id: "map", label: "Poll status map", on: false },
   { id: "races", label: "Race calls / tallies", on: false },
   { id: "countdown", label: "Poll closes", on: false },
   { id: "manual", label: "Manual boards", on: false }
@@ -207,7 +214,7 @@ export function defaultCategories() {
   return out;
 }
 
-export const SCREENS = ["home", "holding", "segment", "senate", "house", "senateManual", "houseManual", "map", "call", "tally", "countdown", "kalshi", "sites", "site", "media", "mediashow"];
+export const SCREENS = ["home", "holding", "segment", "senate", "house", "senateManual", "houseManual", "map", "call", "tally", "countdown", "kalshi", "sites", "site", "media", "mediashow", "senatemap", "govmap", "housemap"];
 
 export function freshState() {
   return {
@@ -249,7 +256,7 @@ export function freshState() {
     races: RACES.map(clone),
     states: STATES.map(clone),
     segments: SEGMENTS.map(clone),
-    markets: [defaultKalshiMarket()],
+    markets: defaultMarkets(),
     sites: [],
     media: []
   };

@@ -6,6 +6,8 @@ import { mountKalshi } from "./screen-kalshi.js";
 import { mountSites, mountSite } from "./screen-sites.js";
 import { mountMedia, mountMediaShow } from "./screen-media.js";
 import { mountHome } from "./screen-home.js";
+import { mountSenateMap, mountGovMap, mountHouseMap } from "./screen-maps.js";
+import { closePdf } from "./pdf-view.js";
 
 const mounts = {
   home: mountHome,
@@ -23,10 +25,14 @@ const mounts = {
   sites: mountSites,
   site: mountSite,
   media: mountMedia,
-  mediashow: mountMediaShow
+  mediashow: mountMediaShow,
+  senatemap: mountSenateMap,
+  govmap: mountGovMap,
+  housemap: mountHouseMap
 };
 
 export function mount(root, state) {
+  closePdf();
   root.replaceChildren();
   const node = document.createElement("section");
   node.className = "screen screen-" + state.screen;

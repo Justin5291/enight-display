@@ -3,11 +3,12 @@ import { mount, patch, tick } from "./screens.js";
 import { initMarkup, clearInk, setMarkupEnabled } from "./markup.js";
 import { initDock, trackPage } from "./dock.js";
 import { initSettings, openSettings } from "./settings.js";
-import { startKalshi } from "./kalshi.js";
+import { startKalshi, pokeKalshi } from "./kalshi.js";
 import { startSeats, onSeats } from "./nyt.js";
 
 const root = document.getElementById("screen");
 let seen = null;
+let lastKx = null;
 
 loadState();
 
@@ -36,11 +37,18 @@ function render() {
   if (changed || !root._node) mount(root, s);
   else patch(root, s);
   trackPage(s);
+  /* Opening a market loads it now instead of on the next refresh tick. */
+  const kx = s.screen === "kalshi" ? s.live.marketId : null;
+  if (kx && kx !== lastKx && kalshiStarted) setTimeout(pokeKalshi, 0);
+  lastKx = kx;
 }
+
+let kalshiStarted = false;
 
 subscribe(render);
 render();
 
+kalshiStarted = true;
 startKalshi(getState, () => {
   const s = getState();
   if (s.screen === "kalshi" || s.screen === "home") patch(root, s);
@@ -57,7 +65,7 @@ startKalshi(getState, () => {
 startSeats(() => getState().settings.feedDate);
 onSeats(() => {
   const s = getState();
-  if (s.screen === "senate" || s.screen === "house" || s.screen === "home") patch(root, s);
+  if (s.screen === "senate" || s.screen === "house" || s.screen === "home" || s.screen === "senatemap" || s.screen === "govmap" || s.screen === "housemap") patch(root, s);
 });
 
 setInterval(() => {

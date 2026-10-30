@@ -6,6 +6,10 @@ import { putBlob, kindOf, mediaSrc } from "./media-db.js";
 import { goPage } from "./pages.js";
 import { openSite } from "./screen-sites.js";
 import { flash } from "./operator.js";
+import { mapBlurb } from "./screen-maps.js";
+import { KALSHI_CATEGORIES } from "./kalshi-races.js";
+
+const kinds = new Map();
 
 const snaps = new Map();
 let homeNode = null;
@@ -26,7 +30,7 @@ export function mountHome(node, state) {
     fillLive(node);
   };
   refreshQuotes();
-  if (!quoteTimer) quoteTimer = setInterval(refreshQuotes, 20000);
+  if (!quoteTimer) quoteTimer = setInterval(refreshQuotes, 30000);
 }
 
 function paint(node, state) {
@@ -41,7 +45,8 @@ function paint(node, state) {
   if (cats.kalshi) { any = true; scroll.appendChild(kalshiSection(state)); }
   if (cats.sites) { any = true; scroll.appendChild(sitesSection(state)); }
   if (cats.media) { any = true; scroll.appendChild(mediaSection(state)); }
-  if (cats.map) { any = true; scroll.appendChild(singleSection("Map", textTile("States", "MAP", () => goPage({ screen: "map", key: "map", label: "Map" })))); }
+  if (cats.maps) { any = true; scroll.appendChild(mapsSection()); }
+  if (cats.map) { any = true; scroll.appendChild(singleSection("Poll status map", textTile("States", "MAP", () => goPage({ screen: "map", key: "map", label: "Map" })))); }
   if (cats.races) { any = true; scroll.appendChild(raceSection(state)); }
   if (cats.countdown) { any = true; scroll.appendChild(singleSection("Poll closes", textTile("Poll closes", "CLOCK", () => goPage({ screen: "countdown", key: "countdown", label: "Closes" })))); }
   if (cats.manual) { any = true; scroll.appendChild(manualSection()); }
@@ -92,6 +97,22 @@ function seatTile(chamber, name) {
   return btn;
 }
 
+function mapsSection() {
+  return section("Results maps", el("div", { class: "tile-grid" }, [
+    mapTile("senatemap", "Senate map", "S"),
+    mapTile("govmap", "Governor map", "G"),
+    mapTile("housemap", "House map", "H")
+  ]));
+}
+
+function mapTile(screen, name, mark) {
+  const btn = el("button", { type: "button", class: "tile-btn", onClick: () => goPage({ screen: screen, key: screen, label: name.replace("Governor", "Gov") }) });
+  btn.appendChild(el("div", { class: "tile-mark", text: mark }));
+  btn.appendChild(el("div", { class: "tile-name", text: name }));
+  btn.appendChild(el("div", { class: "tile-mode", "data-live": "map:" + screen, text: mapBlurb(screen) }));
+  return btn;
+}
+
 function showSection(state) {
   const tiles = [textTile("Holding", "HOLD", () => goPage({ screen: "holding", key: "holding", label: "Holding" }))];
   for (const seg of state.segments) {
@@ -111,12 +132,44 @@ function kalshiSection(state) {
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") addMarket(input);
   });
-  const grid = el("div", { class: "tile-grid" });
-  for (const market of state.markets) grid.appendChild(kalshiTile(market));
-  const body = el("div", { class: "home-block" }, [
-    el("div", { class: "home-tools" }, [input, add]),
-    state.markets.length ? grid : el("p", { class: "home-empty", text: "No markets yet" })
-  ]);
+  const body = el("div", { class: "home-block" }, [el("div", { class: "home-tools" }, [input, add])]);
+  if (!state.markets.length) {
+    body.appendChild(el("p", { class: "home-empty", text: "No markets yet" }));
+    return section(kalshiMarketsLabel(), body);
+  }
+  const groups = [];
+  for (const name of KALSHI_CATEGORIES) groups.push({ name: name, rows: [] });
+  const added = { name: "Added", rows: [] };
+  for (const market of state.markets) {
+    const g = groups.find((row) => row.name === market.category);
+    (g || added).rows.push(market);
+  }
+  groups.push(added);
+  const live = groups.filter((g) => g.rows.length);
+  const heads = new Map();
+  if (live.length > 1) {
+    const jump = el("div", { class: "kx-jump" });
+    for (const g of live) {
+      jump.appendChild(el("button", {
+        type: "button",
+        class: "kx-jump-btn",
+        text: g.name + " " + g.rows.length,
+        onClick: () => {
+          const head = heads.get(g.name);
+          if (head) head.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }));
+    }
+    body.appendChild(jump);
+  }
+  for (const g of live) {
+    const head = el("div", { class: "group-name kx-group", text: g.name });
+    heads.set(g.name, head);
+    if (live.length > 1) body.appendChild(head);
+    const grid = el("div", { class: "tile-grid" });
+    for (const market of g.rows) grid.appendChild(kalshiTile(market));
+    body.appendChild(grid);
+  }
   return section(kalshiMarketsLabel(), body);
 }
 
@@ -316,6 +369,7 @@ function fillLive(node) {
 function liveText(key) {
   if (!key) return null;
   if (key.indexOf("seat:") === 0) return seatBlurb(key.slice(5));
+  if (key.indexOf("map:") === 0) return mapBlurb(key.slice(4));
   if (key.indexOf("kx:") === 0) return kxPct({ id: key.slice(3) });
   if (key.indexOf("kxtitle:") === 0) return kxTitle(findMarket(key.slice(8)));
   if (key.indexOf("kxsub:") === 0) return kxSub(findMarket(key.slice(6)));
@@ -351,6 +405,7 @@ function kxPct(market) {
 }
 
 function kxTitle(market) {
+  if (market && market.category && market.label) return market.label;
   const bits = quoteBits(market);
   if (bits && bits.title) return bits.title;
   return (market && (market.label || market.ticker)) || "Market";
@@ -403,23 +458,39 @@ async function addFiles(list) {
 
 async function refreshQuotes() {
   if (pulling) return;
+  if (!homeNode || !homeNode.isConnected) return;
   const state = getState();
   if (!state.markets.length || !state.settings.kalshiProxy) return;
   if (typeof document !== "undefined" && document.hidden) return;
   pulling = true;
   try {
-    await Promise.all(state.markets.map(async (market) => {
-      if (!market.ticker) return;
+    /* Two requests at a time so 80+ tiles do not flood the proxy.
+       Events are remembered so the market lookup (a 404) is skipped next time. */
+    const queue = state.markets.filter((m) => m.ticker);
+    let backoff = false;
+    const worker = async () => {
+      while (queue.length && !backoff) {
+        await pullOne(queue.shift());
+        if (homeNode && homeNode.isConnected) fillLive(homeNode);
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    };
+    const pullOne = async (market) => {
       try {
-        const board = await resolveBoard(state.settings.kalshiProxy, market.ticker);
+        const board = await resolveBoard(state.settings.kalshiProxy, market.ticker, kinds.get(market.ticker) || market.kind);
+        kinds.set(market.ticker, board.kind);
         const top = board.outcomes && board.outcomes[0];
         snaps.set(market.id, {
           pct: top ? top.pct : null,
           name: top ? (top.name || "") : "",
           title: board.title || ""
         });
-      } catch (e) { /* keep the last percent */ }
-    }));
+      } catch (e) {
+        /* keep the last percent; on a rate limit stop this pass and try next cycle */
+        if (e && e.status === 429) backoff = true;
+      }
+    };
+    await Promise.all([1, 2].map(worker));
   } finally {
     pulling = false;
   }

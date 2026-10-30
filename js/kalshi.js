@@ -292,7 +292,7 @@ async function refreshSelected() {
   pulling = true;
   try {
     const range = normalizeRange(market.range);
-    const board = await resolveBoard(s.settings.kalshiProxy, market.ticker);
+    const board = await resolveBoard(s.settings.kalshiProxy, market.ticker, market.kind);
     const reload = needsCandles(prev, board, range);
     let candlesAt = prev && prev.candlesAt || 0;
     if (reload) {
@@ -404,11 +404,11 @@ export async function loadBoard(proxy, input, range) {
   return board;
 }
 
-export async function resolveBoard(proxy, input) {
+export async function resolveBoard(proxy, input, hint) {
   const parsed = typeof input === "string" ? parseKalshiInput(input) : null;
   const ticker = parsed ? parsed.ticker : asTicker(input);
   if (!ticker) throw new Error("Could not read a ticker");
-  const resolved = await resolveTarget(proxy, ticker);
+  const resolved = await resolveTarget(proxy, ticker, hint);
   const series = resolved.series || (parsed && parsed.series) || extractSeries(ticker);
   return {
     kind: resolved.kind,
@@ -421,9 +421,9 @@ export async function resolveBoard(proxy, input) {
   };
 }
 
-async function resolveTarget(proxy, ticker) {
+async function resolveTarget(proxy, ticker, hint) {
   let market = null;
-  try {
+  if (hint !== "event") try {
     const data = await kget(proxy, "/trade-api/v2/markets/" + encodeURIComponent(ticker));
     const row = data.market || data;
     if (row && (row.ticker || row.yes_sub_title || row.title)) market = row;

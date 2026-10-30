@@ -165,7 +165,7 @@ function renderMarkup(pane) {
 function renderCategories(pane) {
   const s = getState();
   pane.appendChild(el("h3", { text: "Categories" }));
-  pane.appendChild(el("p", { class: "hint", text: "Each switch is one section on the home dashboard. Off hides that section. Map, race calls, poll closes, and the manual seat boards start off. Their screens are still here." }));
+  pane.appendChild(el("p", { class: "hint", text: "Each switch is one section on the home dashboard. Off hides that section. The poll status map, race calls, poll closes, and the manual seat boards start off. Their screens are still here." }));
   for (const cat of CATEGORIES) {
     const on = !!(s.settings.categories && s.settings.categories[cat.id]);
     pane.appendChild(check(cat.label, on, (v) => update((st) => { st.settings.categories[cat.id] = v; })));

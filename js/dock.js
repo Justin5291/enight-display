@@ -96,7 +96,7 @@ function strip(page) {
 }
 
 function sectionFor(screen) {
-  if (screen === "home" || screen === "senate" || screen === "house") return "categories";
+  if (screen === "home" || screen === "senate" || screen === "house" || /map$/.test(screen) && screen !== "map") return "categories";
   if (screen === "senateManual") return "senate";
   if (screen === "houseManual") return "house";
   if (screen === "map" || screen === "countdown") return "states";

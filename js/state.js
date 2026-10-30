@@ -1,5 +1,6 @@
 import { SCREENS, freshState, DEFAULT_KALSHI_PROXY, defaultCategories, DEFAULTS_VERSION, defaultKalshiMarket, isUneditedShippedSite } from "./data.js";
 import { normalizeRange } from "./kalshi.js";
+import { RACE_MARKETS } from "./kalshi-races.js";
 
 const KEY = "enight-display-v1";
 
@@ -252,6 +253,7 @@ function normalize(s) {
     if (!site.id) site.id = "site-" + Math.random().toString(36).slice(2, 8);
   }
   migrateDefaults(s);
+  seedMarkets(s);
   for (const market of s.markets) {
     market.range = normalizeRange(market.range);
     if (!market.id) market.id = "kx-" + Math.random().toString(36).slice(2, 8);
@@ -264,6 +266,27 @@ function normalize(s) {
   if (s.live.mediaId && !s.media.some((m) => m.id === s.live.mediaId)) s.live.mediaId = null;
   if (!s.states.some((st) => st.abbr === s.live.mapState)) s.live.mapState = s.states[0] ? s.states[0].abbr : "OH";
   return s;
+}
+
+/* Merge curated race markets into any saved setup. A default the user deleted
+   is remembered in settings.seededMarkets and not brought back. User-added
+   markets are never touched. */
+function seedMarkets(s) {
+  const seeded = new Set(Array.isArray(s.settings.seededMarkets) ? s.settings.seededMarkets : []);
+  for (const def of RACE_MARKETS) {
+    const hit = s.markets.find((m) => m.id === def.id || String(m.ticker || "").toUpperCase() === def.ticker);
+    if (hit) {
+      if (!hit.category) hit.category = def.category;
+      if (!hit.kind && hit.ticker === def.ticker) hit.kind = def.kind;
+      if (hit.id === def.id && (!hit.label || hit.label === hit.ticker || hit.label === "Senate control")) hit.label = def.label;
+      seeded.add(def.id);
+      continue;
+    }
+    if (seeded.has(def.id)) continue;
+    s.markets.push(JSON.parse(JSON.stringify(def)));
+    seeded.add(def.id);
+  }
+  s.settings.seededMarkets = [...seeded];
 }
 
 function migrateDefaults(s) {

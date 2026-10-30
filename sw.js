@@ -1,5 +1,5 @@
 /* App-shell cache. Network first, so a show-day fix still arrives, then fall back offline. */
-const CACHE = "enight-shell-v3";
+const CACHE = "enight-shell-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -31,7 +31,14 @@ const ASSETS = [
   "./js/screen-media.js",
   "./js/screen-home.js",
   "./js/operator.js",
-  "./js/settings.js"
+  "./js/settings.js",
+  "./js/screen-maps.js",
+  "./js/us-states.js",
+  "./js/zoom-view.js",
+  "./js/pdf-view.js",
+  "./js/kalshi-races.js",
+  "./vendor/pdfjs/pdf.min.mjs",
+  "./vendor/pdfjs/pdf.worker.min.mjs"
 ];
 
 self.addEventListener("install", (event) => {

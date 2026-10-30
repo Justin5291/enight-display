@@ -1,6 +1,8 @@
 import { el, clear, topbar } from "./util.js";
 import { update } from "./state.js";
 import { mediaSrc } from "./media-db.js";
+import { makeZoomable } from "./zoom-view.js";
+import { showPdf, closePdf } from "./pdf-view.js";
 
 let liveVideo = null;
 
@@ -72,6 +74,8 @@ export function mountMediaShow(node, state) {
   const item = state.media.find((m) => m.id === state.live.mediaId);
   clear(node);
   liveVideo = null;
+  closePdf();
+  node._relayout = null;
   if (!item) {
     node.appendChild(el("div", { class: "site-miss" }, [el("h1", { class: "h-display silver", text: "NO GRAPHIC" })]));
     node._patch = () => {};
@@ -89,11 +93,16 @@ export function mountMediaShow(node, state) {
       return;
     }
     if (item.kind === "image") {
+      const view = el("div", { class: "img-view" });
       const img = el("img", { src: src, alt: item.name || "", draggable: "false" });
       img.addEventListener("error", () => {
-        img.replaceWith(el("div", { class: "muted-note", text: item.name || "Image" }));
+        view.replaceWith(el("div", { class: "muted-note", text: item.name || "Image" }));
       });
-      holder.appendChild(img);
+      view.appendChild(img);
+      holder.appendChild(view);
+      const zoom = makeZoomable(view, img);
+      img.addEventListener("load", () => zoom.relayout());
+      node._relayout = () => zoom.relayout();
     } else if (item.kind === "video") {
       const video = document.createElement("video");
       video.src = src;
@@ -105,11 +114,15 @@ export function mountMediaShow(node, state) {
       video.play().catch(() => {});
       holder.appendChild(video);
       liveVideo = video;
+    } else if (item.kind === "pdf") {
+      const alive = () => node._token === token && node.isConnected;
+      showPdf(holder, src, alive).catch(() => {
+        if (!alive()) return;
+        clear(holder);
+        holder.appendChild(frameFor(src, item));
+      });
     } else {
-      const frame = document.createElement("iframe");
-      frame.src = src;
-      frame.title = item.name || "Media";
-      holder.appendChild(frame);
+      holder.appendChild(frameFor(src, item));
     }
   }).catch(() => {
     if (node._token !== token) return;
@@ -118,4 +131,11 @@ export function mountMediaShow(node, state) {
   node._patch = (s) => {
     if (s.live.mediaId !== node._itemId) mountMediaShow(node, s);
   };
+}
+
+function frameFor(src, item) {
+  const frame = document.createElement("iframe");
+  frame.src = src;
+  frame.title = item.name || "Media";
+  return frame;
 }

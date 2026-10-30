@@ -17,6 +17,9 @@ export function pageOf(state) {
   if (screen === "house") return { key: "house", screen: screen, label: "House" };
   if (screen === "senateManual") return { key: "senateManual", screen: screen, label: "Senate manual" };
   if (screen === "houseManual") return { key: "houseManual", screen: screen, label: "House manual" };
+  if (screen === "senatemap") return { key: "senatemap", screen: screen, label: "Senate map" };
+  if (screen === "govmap") return { key: "govmap", screen: screen, label: "Gov map" };
+  if (screen === "housemap") return { key: "housemap", screen: screen, label: "House map" };
   if (screen === "map") return { key: "map", screen: screen, label: "Map" };
   if (screen === "countdown") return { key: "countdown", screen: screen, label: "Closes" };
   if (screen === "call" || screen === "tally") {
