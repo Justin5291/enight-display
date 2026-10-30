@@ -23,7 +23,7 @@ export function closePdf() {
   }
 }
 
-export async function showPdf(holder, src, isAlive) {
+export async function showPdf(holder, src, isAlive, key) {
   closePdf();
   const mod = await pdfjs();
   const res = await fetch(src);
@@ -59,6 +59,7 @@ export async function showPdf(holder, src, isAlive) {
     pages.push(row);
   }
   const zoom = makeZoomable(view, stack, {
+    key: key,
     onSettle: (scale) => {
       const r = view.getBoundingClientRect();
       for (const row of pages) {
@@ -72,6 +73,8 @@ export async function showPdf(holder, src, isAlive) {
     if (!isAlive()) return null;
     await render(row, 1);
   }
+  /* Sharpen pages at the restored zoom once everything has a first render. */
+  if (zoom.scale() > 1) zoom.relayout();
   return { zoom: zoom, pages: doc.numPages };
 }
 

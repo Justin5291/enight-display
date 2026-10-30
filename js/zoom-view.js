@@ -4,6 +4,31 @@
    is on these gestures never arrive here and strokes draw instead. */
 
 const MAX_SCALE = 8;
+const VIEW_KEY = "enight-zoom-v1";
+const VIEW_MAX = 100;
+
+function readViews() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEW_KEY) || "null");
+    return v && typeof v === "object" ? v : {};
+  } catch (e) { return {}; }
+}
+
+function loadView(key) {
+  const row = readViews()[key];
+  return row && Number.isFinite(Number(row.s)) ? row : null;
+}
+
+function saveView(key, view) {
+  const all = readViews();
+  all[key] = { s: view.s, cx: view.cx, cy: view.cy, t: Date.now() };
+  const keys = Object.keys(all);
+  if (keys.length > VIEW_MAX) {
+    keys.sort((a, b) => (all[a].t || 0) - (all[b].t || 0));
+    for (const k of keys.slice(0, keys.length - VIEW_MAX)) delete all[k];
+  }
+  try { localStorage.setItem(VIEW_KEY, JSON.stringify(all)); } catch (e) { /* full or private */ }
+}
 
 export function makeZoomable(view, content, opts) {
   const o = opts || {};
@@ -37,7 +62,29 @@ export function makeZoomable(view, content, opts) {
     content.style.transition = animate ? "transform 0.22s ease-out" : "none";
     content.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + s + ")";
     if (settleTimer) clearTimeout(settleTimer);
-    settleTimer = setTimeout(() => { if (o.onSettle) o.onSettle(s); }, 260);
+    settleTimer = setTimeout(() => {
+      if (o.key && ready) saveView(o.key, describe());
+      if (o.onSettle) o.onSettle(s);
+    }, 260);
+  }
+
+  /* Saved as scale plus the content point at the view center (0..1 of the
+     content box), so it restores even if the screen size changed. */
+  function describe() {
+    const z = size();
+    return {
+      s: Math.round(s * 1000) / 1000,
+      cx: z.cw ? (z.vw / 2 - tx) / s / z.cw : 0.5,
+      cy: z.ch ? (z.vh / 2 - ty) / s / z.ch : 0.5
+    };
+  }
+
+  function restore(v) {
+    const z = size();
+    s = Math.max(1, Math.min(MAX_SCALE, Number(v.s) || 1));
+    tx = z.vw / 2 - (Number(v.cx) || 0) * z.cw * s;
+    ty = z.vh / 2 - (Number(v.cy) || 0) * z.ch * s;
+    apply(false);
   }
 
   function local(e) {
@@ -155,6 +202,10 @@ export function makeZoomable(view, content, opts) {
     apply(false);
   }
 
-  reset(false);
+  let ready = false;
+  const saved = o.key ? loadView(o.key) : null;
+  if (saved) restore(saved);
+  else reset(false);
+  ready = true;
   return { reset: reset, relayout: relayout, scale: () => s };
 }

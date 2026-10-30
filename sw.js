@@ -1,5 +1,5 @@
 /* App-shell cache. Network first, so a show-day fix still arrives, then fall back offline. */
-const CACHE = "enight-shell-v4";
+const CACHE = "enight-shell-v7";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,7 +24,6 @@ const ASSETS = [
   "./js/screens.js",
   "./js/screen-control.js",
   "./js/screen-seats.js",
-  "./js/screen-races.js",
   "./js/screen-show.js",
   "./js/screen-kalshi.js",
   "./js/screen-sites.js",

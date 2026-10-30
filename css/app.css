@@ -1631,3 +1631,18 @@ input[type="color"] { min-height: 44px; min-width: 56px; background: #0c1733; bo
   font-size: 0.75em;
 }
 .kx-group { margin-top: 0.5em; scroll-margin-top: 0.6em; }
+
+/* Setup > Data sources */
+.src-card {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.src-card h4 { margin: 0 0 0.4rem; font-family: var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); font-size: 1rem; }
+.src-row { display: grid; grid-template-columns: 8.5rem 1fr; gap: 0.5rem; padding: 0.25rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.92rem; line-height: 1.35; }
+.src-row:first-of-type { border-top: 0; }
+.src-k { color: var(--muted); font-family: var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.8rem; padding-top: 0.1rem; }
+.src-v { color: #f4f7fb; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+@media (max-width: 800px) { .src-row { grid-template-columns: 1fr; gap: 0.1rem; } }

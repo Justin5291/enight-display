@@ -100,7 +100,7 @@ export function mountMediaShow(node, state) {
       });
       view.appendChild(img);
       holder.appendChild(view);
-      const zoom = makeZoomable(view, img);
+      const zoom = makeZoomable(view, img, { key: "media:" + (item.id || item.url) });
       img.addEventListener("load", () => zoom.relayout());
       node._relayout = () => zoom.relayout();
     } else if (item.kind === "video") {
@@ -116,7 +116,7 @@ export function mountMediaShow(node, state) {
       liveVideo = video;
     } else if (item.kind === "pdf") {
       const alive = () => node._token === token && node.isConnected;
-      showPdf(holder, src, alive).catch(() => {
+      showPdf(holder, src, alive, "media:" + (item.id || item.url)).catch(() => {
         if (!alive()) return;
         clear(holder);
         holder.appendChild(frameFor(src, item));

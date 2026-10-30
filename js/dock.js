@@ -113,7 +113,7 @@ function loadStack() {
     const raw = sessionStorage.getItem(STORE);
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return [];
-    return arr.filter((item) => item && item.key && item.screen && item.screen !== "home");
+    return arr.filter((item) => item && item.key && item.screen && item.screen !== "home" && !["call", "tally", "senateManual", "houseManual", "map"].includes(item.screen));
   } catch (e) {
     return [];
   }

@@ -292,6 +292,11 @@ function seedMarkets(s) {
 function migrateDefaults(s) {
   const seen = Number(s.settings && s.settings.defaultsVersion) || 0;
   if (seen >= DEFAULTS_VERSION) return;
+  /* v4: every auto-populated section is switched on once; the toggles still work after that. */
+  if (seen < 4) {
+    const cats = s.settings.categories || (s.settings.categories = {});
+    for (const key of Object.keys(defaultCategories())) cats[key] = true;
+  }
   if (Array.isArray(s.sites)) s.sites = s.sites.filter((site) => !isUneditedShippedSite(site));
   if (!Array.isArray(s.markets) || !s.markets.length) {
     const market = defaultKalshiMarket();

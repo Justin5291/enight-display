@@ -35,6 +35,8 @@ export function mountHome(node, state) {
 
 function paint(node, state) {
   node._sig = structureSig(state);
+  const prev = node.querySelector(".dash-scroll");
+  if (prev && !restoring) saveScroll(prev);
   clear(node);
   const scroll = el("div", { class: "dash-scroll" });
   scroll.appendChild(starsLabel(state.brand.title || "ELECTION NIGHT"));
@@ -46,13 +48,97 @@ function paint(node, state) {
   if (cats.sites) { any = true; scroll.appendChild(sitesSection(state)); }
   if (cats.media) { any = true; scroll.appendChild(mediaSection(state)); }
   if (cats.maps) { any = true; scroll.appendChild(mapsSection()); }
-  if (cats.map) { any = true; scroll.appendChild(singleSection("Poll status map", textTile("States", "MAP", () => goPage({ screen: "map", key: "map", label: "Map" })))); }
-  if (cats.races) { any = true; scroll.appendChild(raceSection(state)); }
   if (cats.countdown) { any = true; scroll.appendChild(singleSection("Poll closes", textTile("Poll closes", "CLOCK", () => goPage({ screen: "countdown", key: "countdown", label: "Closes" })))); }
-  if (cats.manual) { any = true; scroll.appendChild(manualSection()); }
   if (!any) scroll.appendChild(el("p", { class: "home-empty", text: "Every section is off. Turn sections on in Setup." }));
+  sortTiles(scroll);
   node.appendChild(el("div", { class: "dash" }, [scroll]));
   fillLive(node);
+  scroll.addEventListener("scroll", () => { if (!restoring) saveScroll(scroll); }, { passive: true });
+  restoreScroll(scroll);
+}
+
+/* Alphabetize tiles by title inside every grid (each section, each site group,
+   each Kalshi category). Case-insensitive natural sort, so "Florida 9th" comes
+   before "Florida 14th". Stable, so a race's CALL tile stays ahead of its TALLY. */
+const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+function tileTitle(tile) {
+  const name = tile.querySelector(".tile-name");
+  return (name ? name.textContent : tile.textContent || "").trim();
+}
+
+function sortTiles(scroll) {
+  scroll.querySelectorAll(".tile-grid").forEach((grid) => {
+    const tiles = [...grid.children];
+    if (tiles.length < 2) return;
+    const keyed = tiles.map((tile, i) => ({ tile: tile, key: tileTitle(tile), i: i }));
+    keyed.sort((a, b) => collator.compare(a.key, b.key) || a.i - b.i);
+    for (const row of keyed) grid.appendChild(row.tile);
+  });
+}
+
+/* Dashboard scroll memory. Kept in memory and in sessionStorage, for the inner
+   .dash-scroll element and for the page itself in case the page is what scrolls.
+   Restored after render and re-applied while async tiles and images lay out,
+   until the operator touches the dashboard. */
+const SCROLL_KEY = "enight-home-scroll";
+let savedScroll = readScroll();
+let restoring = false;
+let restoreRun = 0;
+
+function readScroll() {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "null");
+    if (v && typeof v === "object") return { el: Number(v.el) || 0, win: Number(v.win) || 0 };
+  } catch (e) { /* private mode */ }
+  return { el: 0, win: 0 };
+}
+
+function pageY() {
+  return window.scrollY || (document.scrollingElement && document.scrollingElement.scrollTop) || 0;
+}
+
+function saveScroll(scroll) {
+  if (!scroll || !scroll.isConnected) return;
+  savedScroll = { el: scroll.scrollTop, win: pageY() };
+  try { sessionStorage.setItem(SCROLL_KEY, JSON.stringify(savedScroll)); } catch (e) { /* private mode */ }
+}
+
+function restoreScroll(scroll) {
+  const target = { el: savedScroll.el, win: savedScroll.win };
+  if (!target.el && !target.win) return;
+  const run = ++restoreRun;
+  restoring = true;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    if (run === restoreRun) restoring = false;
+    scroll.removeEventListener("pointerdown", finish);
+    scroll.removeEventListener("touchstart", finish);
+    scroll.removeEventListener("wheel", finish);
+    scroll.removeEventListener("load", apply, true);
+  };
+  const apply = () => {
+    if (done || run !== restoreRun || !scroll.isConnected) { finish(); return; }
+    if (target.el && Math.abs(scroll.scrollTop - target.el) > 1) scroll.scrollTop = target.el;
+    if (target.win && Math.abs(pageY() - target.win) > 1) window.scrollTo(0, target.win);
+  };
+  scroll.addEventListener("pointerdown", finish, { passive: true });
+  scroll.addEventListener("touchstart", finish, { passive: true });
+  scroll.addEventListener("wheel", finish, { passive: true });
+  scroll.addEventListener("load", apply, true);
+  apply();
+  requestAnimationFrame(() => { apply(); requestAnimationFrame(apply); });
+  for (const ms of [60, 150, 300, 600, 1000, 1600]) setTimeout(apply, ms);
+  setTimeout(finish, 1700);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("scroll", () => {
+    const scroll = homeNode && homeNode.isConnected ? homeNode.querySelector(".dash-scroll") : null;
+    if (scroll && !restoring) saveScroll(scroll);
+  }, { passive: true });
 }
 
 function structureSig(s) {
@@ -270,36 +356,6 @@ function mediaTile(item) {
   btn.appendChild(el("div", { class: "tile-name", text: item.name || "Untitled" }));
   btn.appendChild(el("div", { class: "tile-mode", text: (item.kind || "file").toUpperCase() }));
   return btn;
-}
-
-function raceSection(state) {
-  const tiles = [];
-  for (const race of state.races) {
-    const name = race.short || race.title || "Race";
-    tiles.push(textTile(name, "CALL", () => goPage({
-      screen: "call",
-      raceId: race.id,
-      key: "call:" + race.id,
-      label: name + " call"
-    })));
-    tiles.push(textTile(name, "TALLY", () => goPage({
-      screen: "tally",
-      raceId: race.id,
-      key: "tally:" + race.id,
-      label: name + " tally"
-    })));
-  }
-  const body = tiles.length
-    ? el("div", { class: "tile-grid" }, tiles)
-    : el("p", { class: "home-empty", text: "No races yet" });
-  return section("Race calls / tallies", body);
-}
-
-function manualSection() {
-  return section("Manual boards", el("div", { class: "tile-grid" }, [
-    textTile("Senate", "MANUAL", () => goPage({ screen: "senateManual", key: "senateManual", label: "Senate manual" })),
-    textTile("House", "MANUAL", () => goPage({ screen: "houseManual", key: "houseManual", label: "House manual" }))
-  ]));
 }
 
 function textTile(name, mode, onClick) {

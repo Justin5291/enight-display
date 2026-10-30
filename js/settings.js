@@ -9,11 +9,9 @@ import { deleteBlob } from "./media-db.js";
 const NAV = [
   ["show", "Show"],
   ["categories", "Categories"],
+  ["sources", "Data sources"],
   ["markup", "Markup"],
   ["kalshi", "Kalshi"],
-  ["senate", "Senate"],
-  ["house", "House"],
-  ["races", "Races"],
   ["states", "States"],
   ["segments", "Run of show"],
   ["sites", "Websites"],
@@ -92,6 +90,7 @@ function render() {
 const RENDER = {
   show: renderShow,
   categories: renderCategories,
+  sources: renderSources,
   markup: renderMarkup,
   kalshi: renderKalshi,
   senate: (pane) => renderBoard(pane, "senate"),
@@ -165,7 +164,7 @@ function renderMarkup(pane) {
 function renderCategories(pane) {
   const s = getState();
   pane.appendChild(el("h3", { text: "Categories" }));
-  pane.appendChild(el("p", { class: "hint", text: "Each switch is one section on the home dashboard. Off hides that section. The poll status map, race calls, poll closes, and the manual seat boards start off. Their screens are still here." }));
+  pane.appendChild(el("p", { class: "hint", text: "Each switch is one section on the home dashboard. Off hides that section. Only auto-populated sections are listed; the operator-driven boards are retired." }));
   for (const cat of CATEGORIES) {
     const on = !!(s.settings.categories && s.settings.categories[cat.id]);
     pane.appendChild(check(cat.label, on, (v) => update((st) => { st.settings.categories[cat.id] = v; })));
@@ -547,6 +546,87 @@ function renderMedia(pane) {
     update((s) => { s.media = []; s.live.mediaId = null; });
     render();
   }));
+}
+
+/* Plain-language notes on where each dashboard section gets its data.
+   Numbers match the code: nyt.js POLL_MS 60 s, kalshi.js kalshiRefreshSec and
+   CANDLE_MS 5 min, screen-home.js tile refresh 30 s with 2 requests at a time. */
+function renderSources(pane) {
+  const s = getState();
+  const feed = s.settings.feedDate || "2026-11-03";
+  const proxy = s.settings.kalshiProxy || "(not set)";
+  const sec = Number(s.settings.kalshiRefreshSec) || 20;
+  const nyt = "static01.nyt.com/elections-assets/pages/data/" + feed + "/results-{senate|house|governor}.json";
+  pane.appendChild(el("h3", { text: "Data sources" }));
+  pane.appendChild(el("p", { class: "hint", text: "How each dashboard section is filled. Everything below refreshes by itself; nobody has to start a refresh. Errors are never shown on air: the last good numbers stay up and the Updated time shows when they last changed." }));
+  const cards = [
+    ["Kalshi markets", [
+      ["Source", "Kalshi prices and price history, fetched through the show proxy (Kalshi blocks direct browser calls). Proxy: " + proxy],
+      ["Refresh", "The chart on screen refreshes every " + sec + " s (Setup > Kalshi > Refresh seconds) and loads at once when you open a market. Price history reloads every 5 min, or right away when you change the 1H/1D/1W/1M/ALL range. Home tiles refresh every 30 s while the dashboard is showing, 2 requests at a time."],
+      ["Manual?", "No. The 83 race markets ship with the app; markets you add yourself refresh the same way."],
+      ["On error or offline", "The last chart and percent stay up and the Updated time stops moving. If Kalshi rate-limits (HTTP 429), the tile pass stops and tries again on the next 30 s cycle. Nothing refreshes while the app is in the background."],
+      ["Settings", "Kalshi proxy URL and Refresh seconds (Setup > Kalshi); chart range is saved per market."]
+    ]],
+    ["Seat trackers (Senate, House)", [
+      ["Source", "AP race calls from the New York Times results feed: " + nyt + ". Only seats in races AP has called are counted."],
+      ["Refresh", "Every 60 s, and again as soon as the app comes back to the foreground."],
+      ["Manual?", "No."],
+      ["On error or offline", "Keeps the last good count for the current feed date. Before the first load it shows a dash and \"Waiting for calls\"."],
+      ["Settings", "Results feed date (Setup > Show), now " + feed + ". Use 2024-11-05 only for rehearsal. Changing it hides the old numbers until the new date loads."]
+    ]],
+    ["Results maps (Senate, Governor, House)", [
+      ["Source", "The same NYT/AP feed as the seat trackers, including results-governor.json. State shapes are built into the app (US Census via us-atlas), so no map download is needed."],
+      ["Refresh", "Every 60 s with the seat trackers. Each map shows an Updated time and \"Race calls: AP via NYT\"."],
+      ["Manual?", "No. Called states fill red, blue or purple; uncalled races are gray; states with no race this cycle are dark. The House map is a state summary of called seats."],
+      ["On error or offline", "Keeps the last good colors and Updated time."],
+      ["Settings", "Results feed date (Setup > Show)."]
+    ]],
+    ["Poll closes", [
+      ["Source", "The built-in poll-closing time for each state (Setup > States) on the election date, in Eastern time. No network needed."],
+      ["Refresh", "The countdown ticks every second and moves to the next close by itself."],
+      ["Manual?", "No, unless you edit a state's close time."],
+      ["On error or offline", "Works offline."],
+      ["Settings", "Election date (Setup > Show) and close times (Setup > States)."]
+    ]],
+    ["Websites", [
+      ["Source", "Pages you add in Setup > Websites, shown live from the site itself (embedded, or opened in Safari for sites that block embedding)."],
+      ["Refresh", "Whatever the site does on its own."],
+      ["Manual?", "You choose which sites to add."],
+      ["On error or offline", "The site's own error page; nothing is cached."],
+      ["Settings", "Per-site mode, zoom and position."]
+    ]],
+    ["Graphics / Media", [
+      ["Source", "Files you upload (images, videos, PDFs), stored on this iPad. PDFs render with a built-in PDF viewer."],
+      ["Refresh", "None needed."],
+      ["Manual?", "You choose the files. Each file remembers its zoom and position."],
+      ["On error or offline", "Uploaded files work offline. Media added by web link needs the network."],
+      ["Settings", "Setup > Media."]
+    ]],
+    ["Show / Holding", [
+      ["Source", "Your run-of-show cards and the show branding (Setup > Run of show, Setup > Show)."],
+      ["Refresh", "Shows edits right away."],
+      ["Manual?", "Only the text you type."],
+      ["On error or offline", "Works offline."],
+      ["Settings", "Setup > Run of show."]
+    ]],
+    ["The app itself", [
+      ["Source", "Hosted on GitHub Pages and cached on the iPad by the service worker."],
+      ["Refresh", "Each launch checks for a newer version first, then falls back to the cached copy."],
+      ["Manual?", "No."],
+      ["On error or offline", "The app still opens from the cache; live Kalshi and NYT numbers need the network."],
+      ["Settings", "None."]
+    ]]
+  ];
+  for (const [title, rows] of cards) {
+    const box = el("div", { class: "src-card" }, [el("h4", { text: title })]);
+    for (const [k, v] of rows) {
+      box.appendChild(el("div", { class: "src-row" }, [
+        el("div", { class: "src-k", text: k }),
+        el("div", { class: "src-v", text: v })
+      ]));
+    }
+    pane.appendChild(box);
+  }
 }
 
 function renderBackup(pane) {

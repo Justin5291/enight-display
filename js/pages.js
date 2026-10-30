@@ -92,7 +92,7 @@ export function pageAlive(state, page) {
   if (page.screen === "kalshi") return !!state.markets.find((m) => m.id === page.marketId);
   if (page.screen === "site") return !!state.sites.find((row) => row.id === page.siteId);
   if (page.screen === "mediashow") return !!state.media.find((m) => m.id === page.mediaId);
-  if (page.screen === "call" || page.screen === "tally") return !!state.races.find((r) => r.id === page.raceId);
+  if (["call", "tally", "senateManual", "houseManual", "map"].includes(page.screen)) return false; /* manual boards are hidden */
   if (page.screen === "segment") return !!state.segments.find((g) => g.id === page.segmentId);
   return true;
 }

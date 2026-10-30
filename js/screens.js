@@ -1,6 +1,5 @@
 import { mountSenate, mountHouse, mountMap, mountCountdown } from "./screen-control.js";
 import { mountSenateFeed, mountHouseFeed } from "./screen-seats.js";
-import { mountCall, mountTally } from "./screen-races.js";
 import { mountHolding, mountSegment } from "./screen-show.js";
 import { mountKalshi } from "./screen-kalshi.js";
 import { mountSites, mountSite } from "./screen-sites.js";
@@ -18,8 +17,6 @@ const mounts = {
   senateManual: mountSenate,
   houseManual: mountHouse,
   map: mountMap,
-  call: mountCall,
-  tally: mountTally,
   countdown: mountCountdown,
   kalshi: mountKalshi,
   sites: mountSites,

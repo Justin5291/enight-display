@@ -174,7 +174,7 @@ export function isUneditedShippedSite(site) {
 export const DEFAULT_KALSHI_PROXY = "https://enight-kalshi-proxy.justin-0ab.workers.dev";
 
 /* Bump when shipped defaults change. Missing or lower versions migrate once. */
-export const DEFAULTS_VERSION = 3;
+export const DEFAULTS_VERSION = 4;
 
 export const DEFAULT_KALSHI_MARKET = {
   id: "kx-senate-control",
@@ -202,10 +202,7 @@ export const CATEGORIES = [
   { id: "sites", label: "Websites", on: true },
   { id: "media", label: "Media / Graphics", on: true },
   { id: "maps", label: "Results maps (Senate, Governor, House)", on: true },
-  { id: "map", label: "Poll status map", on: false },
-  { id: "races", label: "Race calls / tallies", on: false },
-  { id: "countdown", label: "Poll closes", on: false },
-  { id: "manual", label: "Manual boards", on: false }
+  { id: "countdown", label: "Poll closes (countdown from the poll-closing schedule)", on: true }
 ];
 
 export function defaultCategories() {
@@ -214,7 +211,7 @@ export function defaultCategories() {
   return out;
 }
 
-export const SCREENS = ["home", "holding", "segment", "senate", "house", "senateManual", "houseManual", "map", "call", "tally", "countdown", "kalshi", "sites", "site", "media", "mediashow", "senatemap", "govmap", "housemap"];
+export const SCREENS = ["home", "holding", "segment", "senate", "house", "countdown", "kalshi", "sites", "site", "media", "mediashow", "senatemap", "govmap", "housemap"];
 
 export function freshState() {
   return {
